@@ -39,8 +39,6 @@ let displayDropdown = function (e) {
     let parent = e.target.parentElement; // current .select element
     let current = e.currentTarget; // .select-button element
 
-    console.log("Hello")
-
     let selects = document.querySelectorAll('.select');
 
     for (let i = 0; i < selects.length; i++) {
