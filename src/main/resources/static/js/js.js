@@ -274,10 +274,15 @@ let navbar = {
                     <div class="row mobile-menu">
                         <div class="mobile-auth">
                             <img @click="displayMobileAuth" src="/img/Group%204.svg">
-                            <div class="row" id="mobile-auth">
+                            <div v-if="user.role === undefined" class="row" id="mobile-auth">
                                 <a @click="displayWindow('login')" href="#">Вход</a>
                                 <div></div>
                                 <a @click="displayWindow('reg')" href="#">Зарегистрироваться</a>
+                            </div>
+                            <div v-else class="row" id="mobile-auth">
+                                <router-link :to="'/user'">Личный кабинет</router-link>
+                                <div></div>
+                                <a @click="logout" href="#">Выйти</a>
                             </div>
                         </div>
                         <form class="mobile-search">
