@@ -50,6 +50,7 @@ let displayDropdown = function (e) {
                 parent.classList.remove('x');
                 current.style.background = '#f7f7f7';
                 current.style.border = '1px solid #d3d3d3';
+
             } else {
 
                 parent.classList.add('x');
@@ -136,18 +137,16 @@ let navbar = {
 
                         closeWindows();
 
-                        console.log(this.user)
-
                         this.$http.post('/user', user).then(
                             result => {
                                 this.user = JSON.parse(result.bodyText)
-                                console.log(JSON.parse(result.bodyText))
-
-                                console.log(this.user)
                             }
                         )
                     }
                 });
+        },
+        logout: function() {
+            this.user = {}
         },
         reg: function (e) {
 
@@ -261,9 +260,13 @@ let navbar = {
                         <input @change="search" id="pattern" type="text" placeholder="Поиск по каталогу ...">
                         <img @click="search" src="/img/Group%209.svg">
                     </form>
-                    <div class="col auth">
+                    <div v-if="user.role === undefined" class="col auth">
                         <a href="#" @click="displayWindow('login')">Вход в личный кабинет</a>
                         <a href="#" @click="displayWindow('reg')" style="margin-top: 6px">Зарегистрироваться</a>
+                    </div>
+                    <div v-else class="col auth">
+                        <router-link :to="'/user'">Личный кабинет</router-link>
+                        <a href="#" @click="logout" style="margin-top: 6px">Выйти</a>
                     </div>
                     <router-link :to="'/order'" class="basket">
                         <img src="/img/Group%202.svg">

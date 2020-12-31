@@ -231,6 +231,10 @@ p.phone {
     background-color: #595959;
 }
 
+.auth {
+    width: 185px;
+}
+
 .auth a {
     align-self: flex-end;
     font-size: 16px;
