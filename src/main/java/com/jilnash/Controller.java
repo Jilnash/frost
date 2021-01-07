@@ -194,21 +194,21 @@ public class Controller {
     @PostMapping("/user")
     public User user(@RequestBody Map<String, String> map) {
 
-        return userRepository.findByEmail(map.get("email"));
+        return userRepository.findById(Long.valueOf(map.get("id"))).get();
     }
 
     @PostMapping("/login")
-    public boolean login(@RequestBody Map<String, String> map) {
+    public Long login(@RequestBody Map<String, String> map) {
 
         User user = userRepository.findByEmailAndPassword(
                 map.get("email"),
                 map.get("password")
         );
 
-        if (user == null)
-            return false;
+        if(user == null)
+            return -1L;
 
-        return true;
+        return user.getId();
     }
 
     @PostMapping("/validate-user")
@@ -257,7 +257,7 @@ public class Controller {
     @PostMapping("/validate-user-contacts")
     public Map<String, String> validateUserContacts(@RequestBody Map<String, String> map) {
 
-        User user = userRepository.getOne(1L);
+        User user = userRepository.getOne(Long.valueOf(map.get("id")));
 
         if (!map.get("name").isEmpty())
             user.setName(map.get("name"));
@@ -297,7 +297,7 @@ public class Controller {
     @PostMapping("/user-contacts")
     public void userContacts(@RequestBody Map<String, String> map) {
 
-        User user = userRepository.getOne(1L);
+        User user = userRepository.getOne(Long.valueOf(map.get("id")));
 
         user.setEmail(map.get("email"));
         user.setName(map.get("name"));
@@ -311,7 +311,7 @@ public class Controller {
     @PostMapping("/validate-user-shipping")
     public Map<String, String> validateUserShipping(@RequestBody Map<String, String> map) {
 
-        User user = userRepository.getOne(1L);
+        User user = userRepository.getOne(Long.valueOf(map.get("id")));
 
         if (!map.get("country").isEmpty())
             user.setCountry(countryRepository.findByName(map.get("country")));
@@ -354,7 +354,7 @@ public class Controller {
     @PostMapping("/user-shipping")
     public void userShipping(@RequestBody Map<String, String> map) {
 
-        User user = userRepository.getOne(1L);
+        User user = userRepository.getOne(Long.valueOf(map.get("id")));
 
         user.setCountry(countryRepository.findByName(map.get("country")));
         user.setRegion(regionRepository.findByName(map.get("region")));
@@ -480,7 +480,6 @@ public class Controller {
             order.setUser(user);
         }
 
-        order.setNumber(1L);
         order.setStatus("created");
         order.setName(map.get("name"));
         order.setSurname(map.get("surname"));
@@ -493,5 +492,24 @@ public class Controller {
         order.setFlat(map.get("flat"));
 
         orderRepository.save(order);
+
+        map.forEach((k, v) -> {
+
+            if(k.startsWith("product")) {
+
+                Long id = Long.valueOf(k.split("product")[1]);
+                Integer count = Integer.valueOf(v);
+
+                Product product = productRepository.getOne(id);
+
+                OrderContent orderContent = new OrderContent();
+
+                orderContent.setOrder(order);
+                orderContent.setProduct(product);
+                orderContent.setCount(count);
+
+                orderContentRepository.save(orderContent);
+            }
+        });
     }
 }

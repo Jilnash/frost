@@ -22,10 +22,6 @@ public class Order {
     private Long id;
 
     @NotNull
-//    @UniqueElements
-    private Long number;
-
-    @NotNull
     private String status;
 
     @NotNull(message = "Задайте имя")

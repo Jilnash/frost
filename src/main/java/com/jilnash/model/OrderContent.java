@@ -24,5 +24,5 @@ public class OrderContent {
     private Product product;
 
     @NotNull
-    private int count;
+    private Integer count;
 }

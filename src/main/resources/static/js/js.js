@@ -11,10 +11,10 @@ let displayWindow = function (windowClass) {
     window.style.display = 'block';
     window.parentElement.style.display = 'block'; // .backdrop element
 
-    for (let i = 0; i < windows.length; i++) {
+    for (let w of windows) {
 
-        if (windows[i] !== window) {
-            windows[i].style.display = 'none';
+        if (w !== window) {
+            w.style.display = 'none';
         }
     }
 }
@@ -25,12 +25,12 @@ let closeWindows = function () {
 
     let backdrops = document.querySelectorAll('.backdrop');
 
-    for (let i = 0; i < backdrops.length; i++) {
-        backdrops[i].style.display = 'none';
+    for (let b of backdrops) {
+        b.style.display = 'none';
     }
 
-    for (let i = 0; i < windows.length; i++) {
-        windows[i].style.display = 'none';
+    for (let w of windows) {
+        w.style.display = 'none';
     }
 }
 
@@ -41,9 +41,9 @@ let displayDropdown = function (e) {
 
     let selects = document.querySelectorAll('.select');
 
-    for (let i = 0; i < selects.length; i++) {
+    for (let select of selects) {
 
-        if (parent === selects[i]) {
+        if (parent === select) {
 
             if (parent.classList.contains('x')) {
 
@@ -59,9 +59,9 @@ let displayDropdown = function (e) {
             }
         } else {
 
-            selects[i].classList.remove('x');
+            select.classList.remove('x');
 
-            let a = selects[i].querySelector('a');
+            let a = select.querySelector('a');
 
             a.style.background = '#f7f7f7';
             a.style.borderBottom = '1px solid #d3d3d3'
@@ -89,8 +89,6 @@ let navbar = {
         return {}
     },
     props: ['products', 'search', 'user'],
-    created: function () {
-    },
     methods: {
         displayWindow: function (windowClass) {
 
@@ -126,10 +124,11 @@ let navbar = {
 
             this.$http.post('/login', user).then(
                 res => {
-                    if (res.bodyText !== 'true') {
+                    if (res.bodyText === '-1') {
 
                         email.parentElement.classList.add('incorrect');
                         password.parentElement.classList.add('incorrect');
+
                     } else {
 
                         email.parentElement.classList.remove('incorrect');
@@ -137,16 +136,18 @@ let navbar = {
 
                         closeWindows();
 
-                        this.$http.post('/user', user).then(
+                        this.$http.post('/user', {id: res.bodyText}).then(
                             result => {
+                                localStorage.user = JSON.parse(result.bodyText).id
                                 this.user = JSON.parse(result.bodyText)
                             }
                         )
                     }
                 });
         },
-        logout: function() {
-            this.user = {}
+        logout: function () {
+            delete localStorage.user
+            this.user = localStorage.user
         },
         reg: function (e) {
 
@@ -230,7 +231,6 @@ let navbar = {
                         this.$http.post('/reg', user);
                         closeWindows();
                     }
-
                 }
             );
         },
@@ -260,7 +260,7 @@ let navbar = {
                         <input @change="search" id="pattern" type="text" placeholder="Поиск по каталогу ...">
                         <img @click="search" src="/img/Group%209.svg">
                     </form>
-                    <div v-if="user.role === undefined" class="col auth">
+                    <div v-if="user === undefined" class="col auth">
                         <a href="#" @click="displayWindow('login')">Вход в личный кабинет</a>
                         <a href="#" @click="displayWindow('reg')" style="margin-top: 6px">Зарегистрироваться</a>
                     </div>
@@ -274,7 +274,7 @@ let navbar = {
                     <div class="row mobile-menu">
                         <div class="mobile-auth">
                             <img @click="displayMobileAuth" src="/img/Group%204.svg">
-                            <div v-if="user.role === undefined" class="row" id="mobile-auth">
+                            <div v-if="user === undefined" class="row" id="mobile-auth">
                                 <a @click="displayWindow('login')" href="#">Вход</a>
                                 <div></div>
                                 <a @click="displayWindow('reg')" href="#">Зарегистрироваться</a>
@@ -282,7 +282,7 @@ let navbar = {
                             <div v-else class="row" id="mobile-auth">
                                 <router-link :to="'/user'">Личный кабинет</router-link>
                                 <div></div>
-                                <a @click="logout" href="#">Выйти</a>
+                                <router-link :to="'/products'" @click="logout">Выйти</router-link>
                             </div>
                         </div>
                         <form class="mobile-search">
@@ -375,6 +375,7 @@ let navbar = {
 let products = {
     data: function () {
         return {
+            user: undefined,
             categories: [],
             brands: [],
             models: [],
@@ -382,7 +383,7 @@ let products = {
             currentPage: 3,
         };
     },
-    props: ['products', 'search', 'user'],
+    props: ['products', 'search'],
     created: function () {
         this.$http.get("/categories").then(
             res => this.categories = JSON.parse(res.bodyText)
@@ -619,13 +620,22 @@ let product = {
             comments: [],
         }
     },
+    props: ['user'],
     created: function () {
+
         this.$http.get('/products/' + this.$route.params.id).then(
             res => {
                 this.product = JSON.parse(res.bodyText);
                 this.productBrands = this.product.productBrands;
             }
         );
+
+        if (localStorage.user) {
+
+            this.$http.post('/user', {id: localStorage.user}).then(
+                res => this.user = JSON.parse(res.bodyText)
+            )
+        }
     },
     methods: {
         addToBasket: function (x) {
@@ -773,7 +783,10 @@ let product = {
                     </div>
                     <div class="product-comments">
                         <p class="h3">Отзывы</p>
-                        <p>Чтобы оставить отзыв <a href="#" @click="displayWindow('login')">войдите на сайт</a></p>
+                        <p v-if="user === undefined">
+                            Чтобы оставить отзыв <a href="#" @click="displayWindow('login')">войдите на сайт</a>
+                        </p>
+                        <input v-else class="grey-input" type="text">
                         <div class="comment">
                             <p class="name"><b>Константин Константинов Констанинович</b></p>
                             <p>Несколько лет подбираю в этом магазине, ребята очень быстро подбирают, что нужно и по
@@ -913,6 +926,7 @@ let order = {
             price: null,
         };
     },
+    props: ['user'],
     created: function () {
 
         this.$http.get("/countries").then(
@@ -923,13 +937,25 @@ let order = {
             res => this.regions = JSON.parse(res.bodyText)
         );
 
+        if (localStorage.user) {
+
+            this.$http.post('/user', {id: localStorage.user}).then(
+                res => {
+                    this.user = JSON.parse(res.bodyText)
+                }
+            )
+        } else {
+
+            this.user = {}
+        }
+
         let cookies = document.cookie.split('; ');
 
-        for (let i = 0; i < cookies.length; i++) {
+        for (let cookie of cookies) {
 
-            if (cookies[i].startsWith('product')) {
+            if (cookie.startsWith('product')) {
 
-                let records = cookies[i].split('product')[1];
+                let records = cookie.split('product')[1];
 
                 let id = records.split('=')[0];
                 let count = records.split('=')[1];
@@ -1005,20 +1031,18 @@ let order = {
 
             this.addToBasket(id, 0);
 
-            this.total-=count*price;
-
-            this.products.remove();
+            this.total -= count * price;
 
             let productRow = e.currentTarget.parentNode;
 
             productRow.parentNode.removeChild(productRow); // delete the .product-row elem from basket
         },
-        displayPasswords: function(e) {
+        displayPasswords: function (e) {
 
             let password = document.querySelector('#order-password');
             let password1 = document.querySelector('#order-password1');
 
-            if(e.currentTarget.value !== '') {
+            if (e.currentTarget.value !== '') {
 
                 password.parentElement.style.opacity = '1';
                 password1.parentElement.style.opacity = '1';
@@ -1100,14 +1124,12 @@ let order = {
                         phone.parentElement.classList.remove('incorrect');
                     }
 
-                    if(validationMap.password !== undefined) {
+                    if (validationMap.password !== undefined) {
 
                         ok = false;
                         password.parentElement.classList.add('incorrect');
                         password1.parentElement.classList.add('incorrect');
 
-                        console.log(password.parentElement)
-                        console.log(password1.parentElement)
                         password.previousElementSibling.textContent = validationMap.password;
 
                     } else {
@@ -1224,7 +1246,7 @@ let order = {
                         flat.parentElement.classList.remove('incorrect');
                     }
 
-                    if(ok) {
+                    if (ok) {
 
                         document.querySelector('.order-body').querySelector('p').textContent = 'Заказ успешно создан';
                         document.querySelector('.content-shipping').style.display = 'none';
@@ -1237,7 +1259,7 @@ let order = {
                         let surname = document.querySelector('#order-surname');
                         let patronymic = document.querySelector('#order-patronymic');
                         let phone = document.querySelector('#order-phone');
-                        let email = document.querySelector('#order-email')
+                        let email = document.querySelector('#order-email');
 
                         order = {
                             name: name.value,
@@ -1251,6 +1273,14 @@ let order = {
                             house: house.value,
                             flat: flat.value,
                         }
+
+                        let arr = document.querySelectorAll('input');
+
+                        for (let a of arr)
+
+                            if(a.name.startsWith('product'))
+
+                                order[a.name] = a.value;
 
                         this.$http.post('/order', order);
                     }
@@ -1281,7 +1311,7 @@ let order = {
                      v-for="item in basket"
                      :key="item.product.id">
                     <input type="hidden" 
-                           :id="'product' + item.product.id" 
+                           :name="'product' + item.product.id" 
                            :value="item.count">
                     <div class="row">
                         <p class="name">{{ item.product.name }}</p>
@@ -1290,7 +1320,7 @@ let order = {
                             <div class="count">
                                 <button @click.prevent="addToBasket(item.product.id, --item.count, '-')">-</button>
                                 <div v-if="item.count >= 0">{{ item.count }}</div>
-                                <div v-else>0</div>
+                                <div v-else="item.count = 0">0</div>
                                 <button @click.prevent="addToBasket(item.product.id, ++item.count, '+')">+</button>
                             </div>
                             <p class="price">{{ item.product.price }} тг</p>
@@ -1324,22 +1354,22 @@ let order = {
                     <div>
                         <p>Фамилия</p>
                         <p class="explanation"></p>
-                        <input id="order-surname" class="grey-input" name="surname" type="text">
+                        <input id="order-surname" class="grey-input" type="text" :value="user.surname">
                     </div>
                     <div>
                         <p>Имя</p>
                         <p class="explanation"></p>
-                        <input id="order-name" class="grey-input" name="name" type="text">
+                        <input id="order-name" class="grey-input" type="text" :value="user.name">
                     </div>
                     <div>
                         <p>Отчество</p>
                         <p class="explanation"></p>
-                        <input id="order-patronymic" class="grey-input" name="patronymic" type="text">
+                        <input id="order-patronymic" class="grey-input" type="text" :value="user.patronymic">
                     </div>
                     <div>
                         <p>Телефон</p>
                         <p class="explanation"></p>
-                        <input id="order-phone" class="grey-input" name="phone" type="text">
+                        <input id="order-phone" class="grey-input" type="text" :value="user.phone">
                     </div>
                 </div>
                 <div class="vertical-line"></div>
@@ -1347,12 +1377,12 @@ let order = {
                     <div>
                         <p>Email</p>
                         <p class="explanation"></p>
-                        <input @click="displayPasswords" id="order-email" class="grey-input" name="email" type="text">
+                        <input @click="displayPasswords" id="order-email" class="grey-input" type="text">
                     </div>
                     <div style="opacity: 0.3" class="">
                         <p>Пароль</p>
                         <p class="explanation"></p>
-                        <input id="order-password" class="grey-input" name="password" type="password"> 
+                        <input id="order-password" class="grey-input" type="password"> 
                     </div>
                     <div style="opacity: 0.3" class="">
                         <p>Повторите пароль</p>
@@ -1378,7 +1408,7 @@ let order = {
                     <div>
                         <p>Город и поселок</p>
                         <p class="explanation"></p>
-                        <input id="order-city" class="grey-input" type="text">
+                        <input id="order-city" class="grey-input" type="text" :value="user.city">
                     </div>
                 </div>
                 <div class="vertical-line"></div>
@@ -1386,18 +1416,18 @@ let order = {
                     <div>
                         <p>Улица</p>
                         <p class="explanation"></p>
-                        <input id="order-street" class="grey-input" type="text">
+                        <input id="order-street" class="grey-input" type="text" :value="user.street">
                     </div>
                     <div class="row">
                         <div class="col">
                             <p>Дом</p>
                             <p class="explanation"></p>
-                            <input id="order-house" class="grey-input" type="text">
+                            <input id="order-house" class="grey-input" type="text" :value="user.house">
                         </div>
                         <div class="col">
                             <p>Квартира</p>
                             <p class="explanation"></p>
-                            <input id="order-flat" class="grey-input" type="text">
+                            <input id="order-flat" class="grey-input" type="text" :value="user.flat">
                         </div>
                     </div>
                 </div>
@@ -1422,15 +1452,26 @@ let user = {
             regions: [],
         };
     },
+    props: ['user'],
     created: function () {
+
         this.$http.get("/countries").then(
             res => this.countries = JSON.parse(res.bodyText)
         )
+
         this.$http.get("/regions").then(
             res => this.regions = JSON.parse(res.bodyText)
         )
+
+        if (localStorage.user) {
+
+            this.$http.post('/user', {id: localStorage.user}).then(
+                res => {
+                    this.user = JSON.parse(res.bodyText)
+                }
+            )
+        }
     },
-    props: ['products', 'search', 'user'],
     methods: {
         displayMyOrders: function (e) {
             document.querySelector('.my-orders').classList.add('choosen');
@@ -1472,6 +1513,7 @@ let user = {
             let phone = document.querySelector('#user-phone');
 
             let user = {
+                id: localStorage.user,
                 name: name.value,
                 surname: surname.value,
                 patronymic: patronymic.value,
@@ -1536,7 +1578,7 @@ let user = {
                     console.log(user)
                     console.log(validationMap);
 
-                    if(ok)
+                    if (ok)
                         this.$http.post('/user-contacts', user);
                 }
             )
@@ -1553,6 +1595,7 @@ let user = {
             let flat = document.querySelector('#user-flat');
 
             let user = {
+                id: localStorage.user,
                 country: country.value,
                 region: region.value,
                 city: city.value,
@@ -1614,7 +1657,7 @@ let user = {
                     console.log(user)
                     console.log(validationMap)
 
-                    if(ok)
+                    if (ok)
                         this.$http.post('/user-shipping', user);
                 }
             )
@@ -1694,29 +1737,29 @@ let user = {
                             <div>
                                 <p>Фамилия</p>
                                 <p class="explanation"></p>
-                                <input id="user-surname" class="grey-input" type="text">
+                                <input id="user-surname" class="grey-input" type="text" :value="user.surname">
                             </div>
                             <div>
                                 <p>Имя</p>
                                 <p class="explanation"></p>
-                                <input id="user-name" class="grey-input" type="text">
+                                <input id="user-name" class="grey-input" type="text" :value="user.name">
                             </div>
                             <div>
                                 <p>Отчество</p>
                                 <p class="explanation"></p>
-                                <input id="user-patronymic" class="grey-input" type="text">
+                                <input id="user-patronymic" class="grey-input" type="text" :value="user.patronymic">
                             </div>
                         </div>
                         <div>
                             <div>
                                 <p>Email</p>
                                 <p class="explanation"></p>
-                                <input id="user-email" class="grey-input" type="text">
+                                <input id="user-email" class="grey-input" type="text" :value="user.email">
                             </div>
                             <div>
                                 <p>Телефон</p>
                                 <p class="explanation"></p>
-                                <input id="user-phone" class="grey-input" type="text">
+                                <input id="user-phone" class="grey-input" type="text" :value="user.phone">
                             </div>
                             <router-link :to="'/newpassword'">Изменить пароль</router-link>
                         </div>
@@ -1749,24 +1792,24 @@ let user = {
                             <div>
                                 <p>Город или поселок</p>
                                 <p class="explanation"></p>
-                                <input id="user-city" class="grey-input x" type="text">
+                                <input id="user-city" class="grey-input x" type="text" :value="user.city">
                             </div>
                         </div>
                         <div>
                             <div>
                                 <p>Улица</p>
                                 <p class="explanation"></p>
-                                <input id="user-street" class="grey-input" type="text">
+                                <input id="user-street" class="grey-input" type="text" :value="user.street">
                             </div>
                             <div>
                                 <p>Дом</p>
                                 <p class="explanation"></p>
-                                <input id="user-house" class="grey-input" type="text">
+                                <input id="user-house" class="grey-input" type="text" :value="user.house">
                             </div>
                             <div>
                                 <p>Квартира</p>
                                 <p class="explanation"></p>
-                                <input id="user-flat" class="grey-input" type="text">
+                                <input id="user-flat" class="grey-input" type="text" :value="user.flat">
                             </div>
                         </div>
                         <input @click="validateUserShipping" type="button" value="Сохранить изменения" class="button">
@@ -1822,7 +1865,7 @@ const vue = new Vue({
     data: function () {
         return {
             products: [],
-            user: {},
+            user: localStorage.user,
         }
     },
     created: function () {
