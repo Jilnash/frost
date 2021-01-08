@@ -380,7 +380,7 @@ let products = {
             brands: [],
             models: [],
             generations: [],
-            currentPage: 3,
+            currentPage: 1,
         };
     },
     props: ['products', 'search'],
@@ -398,42 +398,11 @@ let products = {
     methods: {
         displayDropdown: displayDropdown,
         changeOption: changeOption,
-        changePage: function (direction) {
+        changePage: function (pageNum) {
 
-            let backward = document.querySelector('.backward');
-            let forward = document.querySelector('.forward');
-            let ellipsis = document.querySelectorAll('.ellipsis');
-
-            if (direction === 'next')
-                this.currentPage++;
-
-            if (direction === 'prev')
-                this.currentPage--;
-
-
-            if (this.currentPage < 2)
-                backward.style.display = 'none';
-            else
-                backward.style.display = 'flex';
-
-            if (this.currentPage > 6)
-                forward.style.display = 'none';
-            else
-                forward.style.display = 'flex';
-
-
-            if (this.currentPage < 3)
-                ellipsis[0].style.display = 'none';
-
-            if (this.currentPage > 4)
-                ellipsis[1].style.display = 'none';
-
-            if (this.currentPage > 3 &&
-                this.currentPage < 5) {
-
-                ellipsis[0].style.display = 'block';
-                ellipsis[1].style.display = 'block';
-            }
+            this.currentPage = pageNum;
+            document.querySelector('#page').value = pageNum;
+            this.search();
         },
         changeBrand: function (e) {
 
@@ -558,20 +527,48 @@ let products = {
                     </div>
             </div>
             <div class="container row page-number">
-                <div class="frame backward"
-                     @click="changePage('prev', $event)">
+            
+                <input type="hidden" id="page" :value="currentPage">
+            
+                <div v-show="currentPage > 1"
+                     @click="changePage(currentPage - 1)"
+                     class="frame backward">
                     <img src="/img/Rectangle%202.2.svg">
                 </div>
                 
-                <div class="frame number">1</div>
-                <div class="ellipsis" style="display: none">...</div>
-                <div class="frame number choosen">2</div>
-                <div class="frame number">3</div>
-                <div class="ellipsis">...</div>
-                <div class="frame number">7</div>
+                <div v-show="currentPage > 3"
+                     @click="changePage(1)" 
+                     class="frame number">1</div>
                 
-                <div class="frame forward"
-                     @click="changePage('next', $event)">
+                <div v-show="currentPage > 3 || currentPage > 3 && currentPage < 5" 
+                     class="ellipsis">...</div>
+                
+                <div v-show="currentPage === 3 || currentPage === 7"
+                     @click="changePage(currentPage - 2)"
+                     class="frame number">{{ currentPage - 2}}</div>
+                <div v-show="currentPage > 1 && currentPage !== 5"
+                     @click="changePage(currentPage - 1)"
+                     class="frame number">{{ currentPage - 1}}</div>
+                     
+                <div class="frame number choosen">{{ currentPage }}</div>
+                
+                <div v-show="currentPage < 7 && currentPage !== 3"
+                     @click="changePage(currentPage + 1)"
+                     class="frame number">{{ currentPage + 1}}</div>
+                <div v-show="currentPage === 5 || currentPage === 1"
+                     @click="changePage(currentPage + 2)"
+                     class="frame number">{{ currentPage + 2}}</div>
+                
+                <div v-show="currentPage < 4 || currentPage > 3 && currentPage < 5" 
+                     class="ellipsis">...</div>
+                     
+                <div v-show="currentPage < 5"
+                     @click="changePage(7)"
+                     class="frame number">7</div>
+                
+                <div v-show="currentPage < 7"
+                     @click="changePage(currentPage + 1)"
+                     class="frame forward">
                     <img src="/img/Rectangle%202.1.svg">
                 </div>
             </div>
@@ -1900,13 +1897,16 @@ const vue = new Vue({
         },
         search: function () {
 
+            let page = document.querySelector('#page').value;
             let category = document.querySelector('#category').value;
             let brand = document.querySelector('#brand').value;
             let model = document.querySelector('#model').value;
             let generation = document.querySelector('#generation').value;
             let pattern = document.querySelector('#pattern').value;
 
-            let page = '?page=1'
+            page = '?page=' + page;
+
+            console.log(page)
 
             if (category !== '')
                 category = '&category=' + category;
