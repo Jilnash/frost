@@ -381,6 +381,9 @@ let products = {
             models: [],
             generations: [],
             currentPage: 1,
+            maxPage: 10,
+            xPage: 0,
+            bool: false,
         };
     },
     props: ['products', 'search'],
@@ -393,7 +396,13 @@ let products = {
         );
         this.$http.get("/products?page=1").then(
             res => this.products = JSON.parse(res.bodyText)
-        )
+        );
+
+        this.xPage = this.maxPage - 2;
+
+        if(this.maxPage < 6) {
+            this.xPage = this.maxPage - 2
+        }
     },
     methods: {
         displayDropdown: displayDropdown,
@@ -403,6 +412,10 @@ let products = {
             this.currentPage = pageNum;
             document.querySelector('#page').value = pageNum;
             this.search();
+
+            if(this.maxPage > 6) {
+                this.bool = this.currentPage > 3 && this.currentPage < this.maxPage - 2
+            }
         },
         changeBrand: function (e) {
 
@@ -517,7 +530,8 @@ let products = {
             <div class="container row product-list">
                     <div class="col frame product-item"
                          v-for="product in products"
-                         :key="product.id">
+                         :key="product.id"
+                         :style= "product.id % 3 === 0 ? 'margin-right: 0' : ''">
                         <img src="img/Заглушка.svg">
                         <p>{{ product.name }}</p>
                         <div>
@@ -540,33 +554,33 @@ let products = {
                      @click="changePage(1)" 
                      class="frame number">1</div>
                 
-                <div v-show="currentPage > 3 || currentPage > 3 && currentPage < 5" 
+                <div v-show="currentPage > 3 || bool" 
                      class="ellipsis">...</div>
                 
-                <div v-show="currentPage === 3 || currentPage === 7"
+                <div v-show="currentPage === 3 || currentPage === maxPage && maxPage > 2"
                      @click="changePage(currentPage - 2)"
-                     class="frame number">{{ currentPage - 2}}</div>
-                <div v-show="currentPage > 1 && currentPage !== 5"
+                     class="frame number">{{ currentPage - 2 }}</div>
+                <div v-show="currentPage > 1 && currentPage !== xPage"
                      @click="changePage(currentPage - 1)"
-                     class="frame number">{{ currentPage - 1}}</div>
+                     class="frame number">{{ currentPage - 1 }}</div>
                      
                 <div class="frame number choosen">{{ currentPage }}</div>
                 
-                <div v-show="currentPage < 7 && currentPage !== 3"
+                <div v-show="currentPage < maxPage && currentPage !== 3"
                      @click="changePage(currentPage + 1)"
-                     class="frame number">{{ currentPage + 1}}</div>
-                <div v-show="currentPage === 5 || currentPage === 1"
+                     class="frame number">{{ currentPage + 1 }}</div>
+                <div v-show="currentPage === xPage || currentPage === 1 && maxPage > 2"
                      @click="changePage(currentPage + 2)"
-                     class="frame number">{{ currentPage + 2}}</div>
+                     class="frame number">{{ currentPage + 2 }}</div>
                 
-                <div v-show="currentPage < 4 || currentPage > 3 && currentPage < 5" 
+                <div v-show="currentPage < xPage || bool" 
                      class="ellipsis">...</div>
                      
-                <div v-show="currentPage < 5"
-                     @click="changePage(7)"
-                     class="frame number">7</div>
+                <div v-show="currentPage < xPage"
+                     @click="changePage(maxPage)"
+                     class="frame number">{{ maxPage }}</div>
                 
-                <div v-show="currentPage < 7"
+                <div v-show="currentPage < maxPage"
                      @click="changePage(currentPage + 1)"
                      class="frame forward">
                     <img src="/img/Rectangle%202.1.svg">
@@ -1905,8 +1919,6 @@ const vue = new Vue({
             let pattern = document.querySelector('#pattern').value;
 
             page = '?page=' + page;
-
-            console.log(page)
 
             if (category !== '')
                 category = '&category=' + category;

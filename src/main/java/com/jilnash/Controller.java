@@ -142,8 +142,6 @@ public class Controller {
             }
         }
 
-        System.out.println(page);
-
         return result;
     }
 
