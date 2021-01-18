@@ -734,6 +734,12 @@ p.parent.x::before {
     margin-bottom: 14px;
 }
 
+.product-comments > input[type="text"] {
+    padding: 0 20px;
+    height: 33px;
+    margin-bottom: 13px;
+}
+
 .product-comments > p {
     font-size: 18px;
     line-height: 19px;
@@ -1235,13 +1241,6 @@ p.price {
     margin-bottom: 16px;
 }
 
-.mobile-id,
-.mobile-name,
-.mobile-date,
-.mobile-price {
-    display: none;
-}
-
 .body p.id {
     width: 120px;
     font-weight: 600;
@@ -1283,6 +1282,13 @@ p.price {
 
 .order-details p.count {
     margin-bottom: 30px;
+}
+
+.mobile-id,
+.order-details .mobile-name,
+.mobile-date,
+.mobile-price {
+    display: none;
 }
 
 .body form {
@@ -2137,11 +2143,15 @@ p.price {
     }
 
     .mobile-id,
-    .mobile-name,
+    .order-details .mobile-name,
     .mobile-date,
     .mobile-price {
         display: inline;
         font-weight: 600;
+    }
+
+    .order-details .mobile-name {
+        display: block;
     }
 
     p.mobile-id {

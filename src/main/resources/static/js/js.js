@@ -280,7 +280,7 @@ let navbar = {
                                 <a @click="displayWindow('reg')" href="#">Зарегистрироваться</a>
                             </div>
                             <div v-else class="row" id="mobile-auth">
-                                <router-link :to="'/user'">Личный кабинет</router-link>
+                                <router-link @click="closeWindows" :to="'/user'">Личный кабинет</router-link>
                                 <div></div>
                                 <router-link :to="'/products'" @click="logout">Выйти</router-link>
                             </div>
@@ -407,15 +407,11 @@ let products = {
     methods: {
         displayDropdown: displayDropdown,
         changeOption: changeOption,
-        changePage: function (pageNum) {
+        changeCategory: function (e) {
 
-            this.currentPage = pageNum;
-            document.querySelector('#page').value = pageNum;
+            this.changeOption(e);
+
             this.search();
-
-            if(this.maxPage > 6) {
-                this.bool = this.currentPage > 3 && this.currentPage < this.maxPage - 2
-            }
         },
         changeBrand: function (e) {
 
@@ -437,6 +433,8 @@ let products = {
 
             this.models = [];
             this.generations = [];
+
+            this.search();
         },
         changeModel: function (e) {
 
@@ -454,7 +452,26 @@ let products = {
             generation.nextElementSibling.textContent = 'Все поколения';
 
             this.generations = [];
-        }
+
+            this.search();
+        },
+        changeGeneration: function (e) {
+
+            this.changeOption(e);
+
+            this.search();
+        },
+        changePage: function (pageNum) {
+
+            this.currentPage = pageNum;
+            document.querySelector('#page').value = pageNum;
+
+            if(this.maxPage > 6) {
+                this.bool = this.currentPage > 3 && this.currentPage < this.maxPage - 2
+            }
+
+            this.search();
+        },
     },
     template: `
     <div>
@@ -477,17 +494,17 @@ let products = {
                 <div>
                     <div class="select" style="margin-bottom: 25px">
                         <p>Категория</p>
-                        <input @change="search" id="category" type="hidden" name="category" value="">
+                        <input id="category" type="hidden" name="category" value="">
                         <a @click="displayDropdown" class="select-button">Все категории</a>
                         <div class="dropdown">
                             <a v-for="category in categories" 
                                :key="category.id" 
-                               @click="changeOption">{{ category.name }}</a>
+                               @click="changeCategory">{{ category.name }}</a>
                         </div>
                     </div>
                     <div class="select">
                         <p>Марка</p>
-                        <input @change="search" id="brand" type="hidden" name="brand" value="">
+                        <input id="brand" type="hidden" name="brand" value="">
                         <a @click="displayDropdown" class="select-button">Все марки</a>
                         <div class="dropdown">
                             <a v-for="brand in brands" 
@@ -499,7 +516,7 @@ let products = {
                 <div>
                     <div class="select" style="margin-bottom: 25px">
                         <p>Модель</p>
-                        <input @change="search" id="model" type="hidden" name="model" value="">
+                        <input id="model" type="hidden" name="model" value="">
                         <a @click="displayDropdown" class="select-button">Все модели</a>
                         <div class="dropdown">
                             <a v-if="models.length === 0">Выберите марку</a>
@@ -511,14 +528,14 @@ let products = {
                     </div>
                     <div class="select">
                         <p>Поколение</p>
-                        <input @change="search" id="generation" type="hidden" value="">
+                        <input id="generation" type="hidden" value="">
                         <a @click="displayDropdown" class="select-button">Все поколения</a>
                         <div class="dropdown">
                             <a v-if="generations.length === 0">Выберите модель</a>
                             <a v-else
                                v-for="generation in generations"
                                :key="generation.id"
-                               @click="changeOption">{{ generation.name }}</a>
+                               @click="changeGeneration">{{ generation.name }}</a>
                         </div>
                     </div>
                 </div>
@@ -529,9 +546,9 @@ let products = {
             </div>
             <div class="container row product-list">
                     <div class="col frame product-item"
-                         v-for="product in products"
+                         v-for="(product, index) in products"
                          :key="product.id"
-                         :style= "product.id % 3 === 0 ? 'margin-right: 0' : ''">
+                         :style= "(index + 1) % 3 === 0 ? 'margin-right: 0' : ''">
                         <img src="img/Заглушка.svg">
                         <p>{{ product.name }}</p>
                         <div>
@@ -797,7 +814,7 @@ let product = {
                         <p v-if="user === undefined">
                             Чтобы оставить отзыв <a href="#" @click="displayWindow('login')">войдите на сайт</a>
                         </p>
-                        <input v-else class="grey-input" type="text">
+                        <input v-else class="grey-input" type="text" placeholder="Оставить отзыв">
                         <div class="comment">
                             <p class="name"><b>Константин Константинов Констанинович</b></p>
                             <p>Несколько лет подбираю в этом магазине, ребята очень быстро подбирают, что нужно и по
@@ -886,7 +903,10 @@ let product = {
                 </div>
                 <div class="product-comments">
                     <p class="h3">Отзывы</p>
-                    <p>Чтобы оставить отзыв <a href="#" @click="displayWindow('login')">войдите на сайт</a></p>
+                    <p v-if="user === undefined">
+                        Чтобы оставить отзыв <a href="#" @click="displayWindow('login')">войдите на сайт</a>
+                    </p>
+                    <input v-else class="grey-input" type="text" placeholder="Оставить отзыв">
                     <div class="comment"
                          v-for="comment in product.comments"
                          :key="comment.id">
@@ -935,6 +955,7 @@ let order = {
             basket: [],
             total: 0,
             price: null,
+            number: undefined,
         };
     },
     props: ['user'],
@@ -1293,7 +1314,12 @@ let order = {
 
                                 order[a.name] = a.value;
 
-                        this.$http.post('/order', order);
+                        this.$http.post('/order', order).then(
+                            res => {
+                                let id = JSON.parse(res.bodyText)
+                                this.number = '0'.repeat((6 - id.toString().length)) + id
+                            }
+                        );
                     }
                 }
             )
@@ -1329,7 +1355,10 @@ let order = {
                         <p class="mobile-article">Артикул: {{ item.product.article}}</p>
                         <div class="row">
                             <div class="count">
-                                <button @click.prevent="addToBasket(item.product.id, --item.count, '-')">-</button>
+                                <button v-if="item.count > 0" 
+                                        @click.prevent="addToBasket(item.product.id, --item.count, '-')">-</button>
+                                <button v-else
+                                        @click.prevent="addToBasket(item.product.id, item.count, '-')">-</button>
                                 <div v-if="item.count >= 0">{{ item.count }}</div>
                                 <div v-else="item.count = 0">0</div>
                                 <button @click.prevent="addToBasket(item.product.id, ++item.count, '+')">+</button>
@@ -1447,7 +1476,7 @@ let order = {
             <div class="row content-order">
                 <div class="row">
                     <img src="/img/Group%208.svg">
-                    <p>Заказ №1000001 был создан. Вы можете просмотреть список всех ваших заказов в личном кабинете.</p>
+                    <p>Заказ №{{ number }} был создан. Вы можете просмотреть список всех ваших заказов в личном кабинете.</p>
                 </div>
                 <router-link :to="'/user'">Перейти в личный кабинет</router-link>
             </div>
@@ -1485,6 +1514,7 @@ let user = {
     },
     methods: {
         displayMyOrders: function (e) {
+            document.querySelector('.content').querySelector('p').textContent = 'История заказов'
             document.querySelector('.my-orders').classList.add('choosen');
             document.querySelector('.my-contacts').classList.remove('choosen');
             document.querySelector('.my-shippings').classList.remove('choosen');
@@ -1494,6 +1524,7 @@ let user = {
             document.querySelector('.my-shipping').style.display = 'none';
         },
         displayMyContacts: function (e) {
+            document.querySelector('.content').querySelector('p').textContent = 'Контактный данные'
             document.querySelector('.my-orders').classList.remove('choosen');
             document.querySelector('.my-contacts').classList.add('choosen');
             document.querySelector('.my-shippings').classList.remove('choosen');
@@ -1503,6 +1534,7 @@ let user = {
             document.querySelector('.my-shipping').style.display = 'none';
         },
         displayMyShippings: function (e) {
+            document.querySelector('.content').querySelector('p').textContent = 'Адрес доставки'
             document.querySelector('.my-orders').classList.remove('choosen')
             document.querySelector('.my-contacts').classList.remove('choosen')
             document.querySelector('.my-shippings').classList.add('choosen')
@@ -1694,53 +1726,30 @@ let user = {
                             <p class="price">Стоимость</p>
                         </div>
                         <div class="order-row">
-                            <div class="horizontal-line"></div>
-                            <div class="row">
+                            <template v-for="order in user.orders">
+                                <div class="horizontal-line"></div>
                                 <div class="row">
-                                    <p class="mobile-id">Номер заказа</p>
-                                    <p class="id">№100001</p>
+                                    <div class="row">
+                                        <p class="mobile-id">Номер заказа</p>
+                                        <p class="id">№{{ '0'.repeat((6 - order.id.toString().length)) + order.id }}</p>
+                                    </div>
+                                    <div class="order-details">
+                                        <p class="mobile-name">Наименования товара</p>
+                                        <template v-for="content in order.orderContents">
+                                            <p class="name">{{ content.product.name }}</p>
+                                            <p class="count">{{ content.count }} X {{ content.product.price }} тг</p>
+                                        </template>
+                                    </div>
+                                    <div class="row">
+                                        <p class="mobile-date">Дата заказа</p>
+                                        <p class="date">{{ order.createdAt.split('T')[0].split('-').reverse().join('.') }}</p>
+                                    </div>
+                                    <div class="row">
+                                        <p class="mobile-price">Стоимость</p>
+                                        <p class="price">100 000 тг</p>
+                                    </div>
                                 </div>
-                                <div class="order-details">
-                                    <p class="mobile-name">Наименования товара</p>
-                                    <p class="name">Копрессор кондиционера Hyndai Tuscon, Kia Sportage 97701-2E300FD;
-                                        035-03se; Kia
-                                        Sportage 97701-2E300FD; 0935-02</p>
-                                    <p class="count">1 X 110 999 тг</p>
-                                    <p class="name">Копрессор кондиционера Hyndai Tuscon, Kia Sportage 97701-2E300FD;
-                                        035-03se;</p>
-                                    <p class="count">1 X 95 999 тг</p>
-                                </div>
-                                <div class="row">
-                                    <p class="mobile-date">Дата заказов</p>
-                                    <p class="date">06.07.2019</p>
-                                </div>
-                                <div class="row">
-                                    <p class="mobile-price">Стоимость</p>
-                                    <p class="price">206 998 тг</p>
-                                </div>
-                            </div>
-                            <div class="horizontal-line"></div>
-                            <div class="row">
-                                <div class="row">
-                                    <p class="mobile-id">Номер заказа</p>
-                                    <p class="id">№100002</p>
-                                </div>    
-                                <div class="order-details">
-                                    <p class="mobile-name">Наименования товара</p>
-                                    <p class="name">Копрессор кондиционера Hyndai Tuscon, Kia Sportage 97701-2E300FD;
-                                        035-03se; Kia
-                                        Sportage 97701-2E300FD; 0935-02</p>
-                                    <p class="count">1 X 110 999 тг</p>
-                                </div>
-                                <div class="row">
-                                    <p class="mobile-date">Дата заказов</p>
-                                    <p class="date">04.07.2019</p>
-                                </div>
-                                <div class="row">
-                                    <p class="mobile-price">Стоимость</p>    
-                                    <p class="price">110 999 тг</p>
-                                </div>    
-                            </div>
+                            </template>
                         </div>
                     </div>
                     <form class="row my-contact">
@@ -1781,8 +1790,13 @@ let user = {
                             <div class="select">
                                 <p>Страна</p>
                                 <p class="explanation"></p>
-                                <input id="user-country" type="hidden">
-                                <a @click="displayDropdown" class="select-button">Республика Казахстан</a>
+                                <input id="user-country" type="hidden"
+                                       :value="user.country === null ? '': user.country.name">
+                                <a v-if="user.country === null" 
+                                   @click="displayDropdown" 
+                                   class="select-button">Выберите страну</a>
+                                <a v-else
+                                   @click="displayDropdown" class="select-button">{{ user.country.name }}</a>
                                 <div class="dropdown">
                                     <a v-for="country in countries" 
                                        :key="country.id"
@@ -1792,8 +1806,14 @@ let user = {
                             <div class="select">
                                 <p>Регион / Область</p>
                                 <p class="explanation"></p>
-                                <input id="user-region" type="hidden">
-                                <a @click="displayDropdown" class="select-button">Акмолинская область</a>
+                                <input id="user-region" type="hidden" 
+                                       :value="user.region === null ? '': user.region.name">
+                                <a v-if="user.region === null"
+                                   @click="displayDropdown" 
+                                   class="select-button">Выберите регион</a>
+                                <a v-else
+                                   @click="displayDropdown" 
+                                   class="select-button">{{ user.region.name }}</a>
                                 <div class="dropdown">
                                     <a v-for="region in regions" 
                                        :key="region.id"
@@ -1934,6 +1954,14 @@ const vue = new Vue({
 
             if (pattern !== '')
                 pattern = '&pattern=' + pattern;
+
+            console.log('/products'
+                + page
+                + category
+                + brand
+                + model
+                + generation
+                + pattern)
 
             this.$http.get('/products'
                 + page

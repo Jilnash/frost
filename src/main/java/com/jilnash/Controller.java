@@ -205,7 +205,7 @@ public class Controller {
                 map.get("password")
         );
 
-        if(user == null)
+        if (user == null)
             return -1L;
 
         return user.getId();
@@ -283,14 +283,6 @@ public class Controller {
             validationMap.put(c.getPropertyPath().toString(), c.getMessage());
         }
 
-        System.out.println("/user-contacts");
-
-        System.out.println(user);
-
-        validationMap.forEach((k, v) -> {
-            System.out.println(k + ": " + v);
-        });
-
         return validationMap;
     }
 
@@ -340,14 +332,6 @@ public class Controller {
             validationMap.put(c.getPropertyPath().toString(), c.getMessage());
         }
 
-        System.out.println("/user-shipping");
-
-        System.out.println(user);
-
-        validationMap.forEach((k, v) -> {
-            System.out.println(k + ": " + v);
-        });
-
         return validationMap;
     }
 
@@ -362,9 +346,6 @@ public class Controller {
         user.setStreet(map.get("street"));
         user.setHouse(map.get("house"));
         user.setFlat(map.get("flat"));
-
-        System.out.println("user-shipping");
-        System.out.println(user);
 
         userRepository.save(user);
     }
@@ -408,7 +389,7 @@ public class Controller {
         if (!map.get("email").isEmpty()) {
 
             if (map.get("password").isEmpty() &&
-                map.get("password1").isEmpty()) {
+                    map.get("password1").isEmpty()) {
 
                 validationMap.put("password", "Задайте пароль");
 
@@ -469,11 +450,11 @@ public class Controller {
     }
 
     @PostMapping("/order")
-    public void order(@RequestBody Map<String, String> map) {
+    public Long order(@RequestBody Map<String, String> map) {
 
         Order order = new Order();
 
-        if(!map.get("email").isEmpty()) {
+        if (!map.get("email").isEmpty()) {
 
             User user = userRepository.findByEmail(map.get("email"));
 
@@ -495,7 +476,7 @@ public class Controller {
 
         map.forEach((k, v) -> {
 
-            if(k.startsWith("product")) {
+            if (k.startsWith("product")) {
 
                 Long id = Long.valueOf(k.split("product")[1]);
                 Integer count = Integer.valueOf(v);
@@ -511,5 +492,7 @@ public class Controller {
                 orderContentRepository.save(orderContent);
             }
         });
+
+        return order.getId();
     }
 }
