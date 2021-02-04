@@ -71,11 +71,14 @@ let displayDropdown = function (e) {
 
 let changeOption = function (e) {
 
-    let option = e.currentTarget.textContent.replaceAll("\\s+$", ""); // option text
+    let option = e.currentTarget.textContent; // option text
     let a = e.target.parentElement.previousElementSibling; // <a> select element
     let input = a.previousElementSibling; // input
 
-    input.value = option;
+    if(!option.startsWith('Все'))
+        input.value = option;
+    else
+        input.value = '';
 
     a.classList.remove('x')
 
@@ -85,10 +88,7 @@ let changeOption = function (e) {
 }
 
 let navbar = {
-    data: function () {
-        return {}
-    },
-    props: ['products', 'search', 'user'],
+    props: ['products', 'search', 'user', 'count'],
     methods: {
         displayWindow: function (windowClass) {
 
@@ -270,6 +270,7 @@ let navbar = {
                     </div>
                     <router-link :to="'/order'" class="basket">
                         <img src="/img/Group%202.svg">
+                        <div v-if="count > 0" class="count">{{ count }}</div>
                     </router-link>
                     <div class="row mobile-menu">
                         <div class="mobile-auth">
@@ -294,6 +295,7 @@ let navbar = {
                         </form>
                         <router-link :to="'/order'" class="mobile-basket">
                             <img src="/img/mobile%20basket.svg">
+                            <div v-if="count > 0" class="count">{{ count }}</div>
                         </router-link>
                     </div>
                 </div>
@@ -380,6 +382,10 @@ let products = {
             brands: [],
             models: [],
             generations: [],
+            category: undefined,
+            brand: undefined,
+            model: undefined,
+            generation: undefined,
             currentPage: 1,
             maxPage: 10,
             xPage: 0,
@@ -411,11 +417,21 @@ let products = {
 
             this.changeOption(e);
 
+            this.category = e.currentTarget.textContent;
+
+            if(this.category.startsWith('Все'))
+                this.category = undefined;
+
             this.search();
         },
         changeBrand: function (e) {
 
             let brandName = e.currentTarget.textContent;
+
+            this.brand = brandName;
+
+            if(this.brand.startsWith('Все'))
+                this.brand = undefined;
 
             this.$http.get('/models?brand=' + brandName).then(
                 res => this.models = JSON.parse(res.bodyText)
@@ -440,6 +456,11 @@ let products = {
 
             let modelName = e.currentTarget.textContent;
 
+            this.model = modelName;
+
+            if(this.model.startsWith('Все'))
+                this.model = undefined;
+
             this.$http.get('/generations?model=' + modelName).then(
                 res => this.generations = JSON.parse(res.bodyText)
             )
@@ -456,6 +477,11 @@ let products = {
             this.search();
         },
         changeGeneration: function (e) {
+
+            this.generation = e.currentTarget.textContent;
+
+            if(this.generation.startsWith('Все'))
+                this.generation = undefined
 
             this.changeOption(e);
 
@@ -494,9 +520,11 @@ let products = {
                 <div>
                     <div class="select" style="margin-bottom: 25px">
                         <p>Категория</p>
-                        <input id="category" type="hidden" name="category" value="">
+                        <input id="category" type="hidden" name="category">
                         <a @click="displayDropdown" class="select-button">Все категории</a>
                         <div class="dropdown">
+                            <a v-if="category" 
+                               @click="changeCategory">Все категории</a>
                             <a v-for="category in categories" 
                                :key="category.id" 
                                @click="changeCategory">{{ category.name }}</a>
@@ -504,9 +532,11 @@ let products = {
                     </div>
                     <div class="select">
                         <p>Марка</p>
-                        <input id="brand" type="hidden" name="brand" value="">
+                        <input id="brand" type="hidden" name="brand">
                         <a @click="displayDropdown" class="select-button">Все марки</a>
                         <div class="dropdown">
+                            <a v-if="brand"
+                               @click="changeBrand">Все марки</a>
                             <a v-for="brand in brands" 
                                :key="brand.id"
                                @click="changeBrand">{{ brand.name }}</a>
@@ -516,26 +546,32 @@ let products = {
                 <div>
                     <div class="select" style="margin-bottom: 25px">
                         <p>Модель</p>
-                        <input id="model" type="hidden" name="model" value="">
+                        <input id="model" type="hidden" name="model">
                         <a @click="displayDropdown" class="select-button">Все модели</a>
                         <div class="dropdown">
                             <a v-if="models.length === 0">Выберите марку</a>
-                            <a v-else
-                               v-for="model in models"
-                               :key="model.id"
-                               @click="changeModel">{{ model.name }}</a>
+                            <template v-else>
+                                <a v-if="model"
+                                   @click="changeModel">Все модели</a>
+                                <a v-for="model in models"
+                                   :key="model.id"
+                                   @click="changeModel">{{ model.name }}</a>
+                            </template>
                         </div>
                     </div>
                     <div class="select">
                         <p>Поколение</p>
-                        <input id="generation" type="hidden" value="">
+                        <input id="generation" type="hidden">
                         <a @click="displayDropdown" class="select-button">Все поколения</a>
                         <div class="dropdown">
                             <a v-if="generations.length === 0">Выберите модель</a>
-                            <a v-else
-                               v-for="generation in generations"
-                               :key="generation.id"
-                               @click="changeGeneration">{{ generation.name }}</a>
+                            <template v-else>
+                                <a v-if="generation"
+                                   @click="changeGeneration">Все поколения</a>
+                                <a v-for="generation in generations"
+                                   :key="generation.id"
+                                   @click="changeGeneration">{{ generation.name }}</a>
+                            </template>
                         </div>
                     </div>
                 </div>
@@ -648,7 +684,7 @@ let product = {
             comments: [],
         }
     },
-    props: ['user'],
+    props: ['user', 'count'],
     created: function () {
 
         this.$http.get('/products/' + this.$route.params.id).then(
@@ -664,25 +700,28 @@ let product = {
                 res => this.user = JSON.parse(res.bodyText)
             )
         }
+
+        console.log(this.count)
     },
     methods: {
-        addToBasket: function (x) {
+        addToBasket: function (prev, next) {
 
-            if (x === '-' && this.c > 0) {
-                this.c--;
+            if(next !== undefined) {
+
+                if (prev === 0 && next === 1)
+                    this.count++;
+
+                if (prev === 1 && next === 0)
+                    this.count--;
+
+                this.$http.post(
+                    '/basket',
+                    {
+                        id: this.product.id.toString(),
+                        count: next,
+                    },
+                )
             }
-
-            if (x === '+') {
-                this.c++;
-            }
-
-            this.$http.post(
-                '/basket',
-                {
-                    id: this.product.id.toString(),
-                    count: this.c.toString(),
-                },
-            )
         },
         displayWindow: function (windowClass) {
 
@@ -707,9 +746,7 @@ let product = {
                 }
             }
 
-            this.c = 1;
-
-            this.addToBasket(this.c);
+            this.addToBasket(this.c, ++this.c);
         },
         closeWindows: closeWindows,
         displayChild: function (e) {
@@ -931,9 +968,10 @@ let product = {
                     <div class="row">
                         <p>Укажите количество: </p>
                         <div class="count">
-                            <button @click.prevent="addToBasket('-')">-</button>
+                            <button v-if="c > 0" @click.prevent="addToBasket(c, --c)">-</button>
+                            <button v-else @click.prevent="addToBasket(c)">-</button>
                             <div>{{ c }}</div>
-                            <button @click.prevent="addToBasket('+')">+</button>
+                            <button @click.prevent="addToBasket(c, ++c)">+</button>
                         </div>
                     </div>
                     <router-link :to="'/order'">
@@ -954,11 +992,11 @@ let order = {
             countries: [],
             basket: [],
             total: 0,
-            price: null,
             number: undefined,
+            totalAmount: 0,
         };
     },
-    props: ['user'],
+    props: ['user', 'count'],
     created: function () {
 
         this.$http.get("/countries").then(
@@ -992,14 +1030,18 @@ let order = {
                 let id = records.split('=')[0];
                 let count = records.split('=')[1];
 
+                this.totalAmount += Number(count);
+
                 if (count > 0) {
 
                     this.$http.get('/products/' + id).then(
                         product => {
+
                             this.basket.push({
                                 product: JSON.parse(product.bodyText),
                                 count: count,
                             });
+
                             this.total += JSON.parse(product.bodyText).price * count;
                         }
                     )
@@ -1007,6 +1049,7 @@ let order = {
             }
         }
 
+        console.log(this.count)
     },
     methods: {
         displayContacts: function () {
@@ -1028,45 +1071,39 @@ let order = {
         },
         displayDropdown: displayDropdown,
         changeOption: changeOption,
-        setProductPrice: function (id) {
+        addToBasket: function (product, prev, next) {
 
-            this.$http.get('/products/' + id).then(
-                res => this.price = JSON.parse(res.bodyText).price
-            );
+            if(next !== undefined) {
+
+                if(next > prev)
+                    this.total += product.price;
+
+                if(next < prev)
+                    this.total -= product.price;
+
+                if(prev === 0 && next === 1)
+                    this.count++;
+
+                if(prev === 1 || prev === null && next === 0)
+                    this.count--
+
+                this.$http.post(
+                    '/basket',
+                    {
+                        id: product.id,
+                        count: next,
+                    },
+                );
+            }
         },
-        addToBasket: function (id, count, x) {
+        deleteItem: function (product, count, e) {
 
-            console.log(count)
+            if(count > 0)
+                this.addToBasket(product, null, 0);
 
-            this.setProductPrice(id);
-
-            this.$http.post(
-                '/basket',
-                {
-                    id: id,
-                    count: count,
-                },
-            );
-
-            if (x === '-'
-                && this.total - this.price >= 0
-                && count > 0)
-
-                this.total -= this.price;
-
-            if (x === '+'
-                && count > 0)
-
-                this.total += this.price;
-        },
-        deleteItem: function (id, price, count, e) {
-
-            this.addToBasket(id, 0);
-
-            this.total -= count * price;
+            this.total -= count * product.price;
 
             let productRow = e.currentTarget.parentNode;
-
             productRow.parentNode.removeChild(productRow); // delete the .product-row elem from basket
         },
         displayPasswords: function (e) {
@@ -1356,18 +1393,18 @@ let order = {
                         <div class="row">
                             <div class="count">
                                 <button v-if="item.count > 0" 
-                                        @click.prevent="addToBasket(item.product.id, --item.count, '-')">-</button>
+                                        @click.prevent="addToBasket(item.product, item.count, --item.count)">-</button>
                                 <button v-else
-                                        @click.prevent="addToBasket(item.product.id, item.count, '-')">-</button>
+                                        @click.prevent="addToBasket(item.product.id, item.count)">-</button>
                                 <div v-if="item.count >= 0">{{ item.count }}</div>
                                 <div v-else="item.count = 0">0</div>
-                                <button @click.prevent="addToBasket(item.product.id, ++item.count, '+')">+</button>
+                                <button @click.prevent="addToBasket(item.product, item.count, ++item.count)">+</button>
                             </div>
                             <p class="price">{{ item.product.price }} тг</p>
                         </div>
                     </div>
                     <p>Артикул: {{ item.product.article }}</p>
-                    <a href="#" @click="deleteItem(item.product.id, item.product.price, item.count, $event)">Удалить из корзины</a>
+                    <a href="#" @click="deleteItem(item.product, item.count, $event)">Удалить из корзины</a>
                     <div class="horizontal-line"></div>
                 </div>
                 <div class="row payment">
@@ -1387,7 +1424,7 @@ let order = {
                         <p class="total">{{ total }} тг</p>
                     </div>
                 </div>
-                <input type="button" class="button" value="Оформить заказ" @click="displayContacts">
+                <input v-if="count > 0" type="button" class="button" value="Оформить заказ" @click="displayContacts">
             </form>
             <form class="row content-contacts">
                 <div>
@@ -1440,6 +1477,7 @@ let order = {
                         <input id="order-region" type="hidden">
                         <a @click="displayDropdown" class="select-button">Все регионы</a>
                         <div class="dropdown">
+                            <a v-if="" @click="changeOption">Все регионы</a>
                             <a v-for="region in regions" 
                                :key="region.id"
                                @click="changeOption">{{ region.name }}</a>
@@ -1571,8 +1609,6 @@ let user = {
 
                     if (validationMap.name !== undefined) {
 
-                        console.log(validationMap.name)
-
                         ok = false;
                         name.parentElement.classList.add('incorrect');
                         name.previousElementSibling.textContent = validationMap.name;
@@ -1583,8 +1619,6 @@ let user = {
                     }
 
                     if (validationMap.surname !== undefined) {
-
-                        console.log(validationMap.surname)
 
                         ok = false;
                         surname.parentElement.classList.add('incorrect');
@@ -1798,6 +1832,7 @@ let user = {
                                 <a v-else
                                    @click="displayDropdown" class="select-button">{{ user.country.name }}</a>
                                 <div class="dropdown">
+                                    <a v-if="" @click="changeOption">Все страны</a>
                                     <a v-for="country in countries" 
                                        :key="country.id"
                                        @click="changeOption">{{ country.name }}</a>
@@ -1815,6 +1850,7 @@ let user = {
                                    @click="displayDropdown" 
                                    class="select-button">{{ user.region.name }}</a>
                                 <div class="dropdown">
+                                    <a v-if="" @click="changeOption">Все регионы</a>
                                     <a v-for="region in regions" 
                                        :key="region.id"
                                        @click="changeOption">{{ region.name }}</a>
@@ -1895,14 +1931,19 @@ let router = new VueRouter({
 const vue = new Vue({
     data: function () {
         return {
+            count: 0,
             products: [],
             user: localStorage.user,
         }
     },
     created: function () {
+
         this.$http.get("/products?page=1").then(
             res => this.products = JSON.parse(res.bodyText)
         )
+
+        if(document.cookie.length > 0)
+            this.count = document.cookie.split('; ').length
     },
     methods: {
         bodyFunction: function (e) {

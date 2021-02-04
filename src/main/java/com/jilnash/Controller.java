@@ -307,9 +307,13 @@ public class Controller {
 
         if (!map.get("country").isEmpty())
             user.setCountry(countryRepository.findByName(map.get("country")));
+        else
+            user.setCountry(null);
 
         if (!map.get("region").isEmpty())
             user.setRegion(regionRepository.findByName(map.get("region")));
+        else
+            user.setRegion(null);
 
         if (!map.get("city").isEmpty())
             user.setCity(map.get("city"));
@@ -352,17 +356,21 @@ public class Controller {
 
     @PostMapping("/basket")
     public void basket(
-            HttpServletRequest request,
             HttpServletResponse response,
             @RequestBody Map<String, String> map) {
 
         if (Integer.parseInt(map.get("count")) < 0)
             map.put("count", "0");
 
-        response.addCookie(
-                new Cookie("product" + map.get("id"),
-                        map.get("count"))
-        );
+        Cookie cookie = new Cookie("product" + map.get("id"), map.get("count"));
+
+        if(cookie.getValue().equals("0")) {
+
+            cookie.setMaxAge(0);
+            cookie.setValue(null);
+        }
+
+        response.addCookie(cookie);
     }
 
     @PostMapping("/validate-order-contacts")
