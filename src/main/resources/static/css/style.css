@@ -1574,15 +1574,16 @@ p.price {
         position: relative;
     }
 
-    a.mobile-basket::after {
-        content: "2";
-        background: #1b55be;
-        border-radius: 50%;
-        padding: 0 7px;
+    a.mobile-basket .count {
         position: absolute;
-        top: -5px;
-        left: 16px;
+        top: -4px;
+        right: -8px;
+        background-image: url("../img/Ellipse.svg");
+        background-repeat: no-repeat;
         color: white;
+        margin-right: 0;
+        width: 20px;
+        height: 20px;
     }
 
     .mobile-contacts {
@@ -2184,6 +2185,7 @@ p.price {
 
     .body .incorrect .explanation {
         bottom: 22px;
+        font-size: 10px;
     }
 
     .my-contact {

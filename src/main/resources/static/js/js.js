@@ -576,7 +576,7 @@ let products = {
                     </div>
                 </div>
                 <label for="in-stock" class="row">
-                    <input type="checkbox" id="in-stock" name="instock">
+                    <input type="checkbox" id="in-stock">
                     <p>в наличии</p>
                 </label>
             </div>
@@ -1071,21 +1071,21 @@ let order = {
         },
         displayDropdown: displayDropdown,
         changeOption: changeOption,
-        addToBasket: function (product, prev, next) {
+        addToBasket: function (product, prev, next, d) {
 
             if(next !== undefined) {
 
                 if(next > prev)
                     this.total += product.price;
 
-                if(next < prev)
+                if(next < prev && d === undefined)
                     this.total -= product.price;
 
-                if(prev === 0 && next === 1)
+                if(Number(prev) === 0 && Number(next) === 1)
                     this.count++;
 
-                if(prev === 1 || prev === null && next === 0)
-                    this.count--
+                if(Number(prev) === 1 && Number(next) === 0)
+                    this.count--;
 
                 this.$http.post(
                     '/basket',
@@ -1099,7 +1099,7 @@ let order = {
         deleteItem: function (product, count, e) {
 
             if(count > 0)
-                this.addToBasket(product, null, 0);
+                this.addToBasket(product, 1, 0, 'd');
 
             this.total -= count * product.price;
 
@@ -1640,6 +1640,17 @@ let user = {
                         patronymic.parentElement.classList.remove('incorrect');
                     }
 
+                    if (validationMap.email !== undefined) {
+
+                        ok = false;
+                        email.parentElement.classList.add('incorrect');
+                        email.previousElementSibling.textContent = validationMap.email;
+
+                    } else {
+
+                        email.parentElement.classList.remove('incorrect');
+                    }
+
                     if (validationMap.phone !== undefined) {
 
                         ok = false;
@@ -1978,6 +1989,9 @@ const vue = new Vue({
             let model = document.querySelector('#model').value;
             let generation = document.querySelector('#generation').value;
             let pattern = document.querySelector('#pattern').value;
+            let ins = document.querySelector('#in-stock').value;
+
+            console.log(ins)
 
             page = '?page=' + page;
 

@@ -14,8 +14,16 @@
 </head>
 <body>
 <div id="app" v-on:click="bodyFunction">
-    <navbar :products="products" :search="search" :user="user" :count="count"></navbar>
-    <router-view :products="products" :search="search" :user="user" :count="count"></router-view>
+    <navbar :products="products"
+            :search="search"
+            :user="user"
+            :count="count">
+    </navbar>
+    <router-view :products="products"
+                 :search="search"
+                 :user="user"
+                 :count="count">
+    </router-view>
     <footerr></footerr>
 </div>
 <script src="js/js.js"></script>
