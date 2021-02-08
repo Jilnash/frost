@@ -75,7 +75,7 @@ let changeOption = function (e) {
     let a = e.target.parentElement.previousElementSibling; // <a> select element
     let input = a.previousElementSibling; // input
 
-    if(!option.startsWith('Все'))
+    if (!option.startsWith('Все'))
         input.value = option;
     else
         input.value = '';
@@ -406,7 +406,7 @@ let products = {
 
         this.xPage = this.maxPage - 2;
 
-        if(this.maxPage < 6) {
+        if (this.maxPage < 6) {
             this.xPage = this.maxPage - 2
         }
     },
@@ -419,7 +419,7 @@ let products = {
 
             this.category = e.currentTarget.textContent;
 
-            if(this.category.startsWith('Все'))
+            if (this.category.startsWith('Все'))
                 this.category = undefined;
 
             this.search();
@@ -430,7 +430,7 @@ let products = {
 
             this.brand = brandName;
 
-            if(this.brand.startsWith('Все'))
+            if (this.brand.startsWith('Все'))
                 this.brand = undefined;
 
             this.$http.get('/models?brand=' + brandName).then(
@@ -458,7 +458,7 @@ let products = {
 
             this.model = modelName;
 
-            if(this.model.startsWith('Все'))
+            if (this.model.startsWith('Все'))
                 this.model = undefined;
 
             this.$http.get('/generations?model=' + modelName).then(
@@ -480,7 +480,7 @@ let products = {
 
             this.generation = e.currentTarget.textContent;
 
-            if(this.generation.startsWith('Все'))
+            if (this.generation.startsWith('Все'))
                 this.generation = undefined
 
             this.changeOption(e);
@@ -492,7 +492,7 @@ let products = {
             this.currentPage = pageNum;
             document.querySelector('#page').value = pageNum;
 
-            if(this.maxPage > 6) {
+            if (this.maxPage > 6) {
                 this.bool = this.currentPage > 3 && this.currentPage < this.maxPage - 2
             }
 
@@ -706,7 +706,7 @@ let product = {
     methods: {
         addToBasket: function (prev, next) {
 
-            if(next !== undefined) {
+            if (next !== undefined) {
 
                 if (prev === 0 && next === 1)
                     this.count++;
@@ -1073,18 +1073,18 @@ let order = {
         changeOption: changeOption,
         addToBasket: function (product, prev, next, d) {
 
-            if(next !== undefined) {
+            if (next !== undefined) {
 
-                if(next > prev)
+                if (next > prev)
                     this.total += product.price;
 
-                if(next < prev && d === undefined)
+                if (next < prev && d === undefined)
                     this.total -= product.price;
 
-                if(Number(prev) === 0 && Number(next) === 1)
+                if (Number(prev) === 0 && Number(next) === 1)
                     this.count++;
 
-                if(Number(prev) === 1 && Number(next) === 0)
+                if (Number(prev) === 1 && Number(next) === 0)
                     this.count--;
 
                 this.$http.post(
@@ -1098,7 +1098,7 @@ let order = {
         },
         deleteItem: function (product, count, e) {
 
-            if(count > 0)
+            if (count > 0)
                 this.addToBasket(product, 1, 0, 'd');
 
             this.total -= count * product.price;
@@ -1193,33 +1193,40 @@ let order = {
                         phone.parentElement.classList.remove('incorrect');
                     }
 
+                    let boolPassword = true;
+
                     if (validationMap.password !== undefined) {
 
                         ok = false;
-                        password.parentElement.classList.add('incorrect');
-                        password1.parentElement.classList.add('incorrect');
-
+                        boolPassword = false;
                         password.previousElementSibling.textContent = validationMap.password;
 
                     } else {
 
-                        password.parentElement.classList.remove('incorrect');
-                        password1.parentElement.classList.remove('incorrect');
+                        password.previousElementSibling.textContent = '';
                     }
 
                     if (validationMap.user !== undefined) {
 
                         ok = false;
+                        boolPassword = false;
                         email.parentElement.classList.add('incorrect');
-                        password.parentElement.classList.add('incorrect');
-                        password1.parentElement.classList.add('incorrect');
                         email.previousElementSibling.textContent = validationMap.user;
 
                     } else {
 
                         email.parentElement.classList.remove('incorrect');
+                    }
+
+                    if (boolPassword) {
+
                         password.parentElement.classList.remove('incorrect');
                         password1.parentElement.classList.remove('incorrect');
+
+                    } else {
+
+                        password.parentElement.classList.add('incorrect');
+                        password1.parentElement.classList.add('incorrect');
                     }
 
                     if (ok) {
@@ -1346,9 +1353,7 @@ let order = {
                         let arr = document.querySelectorAll('input');
 
                         for (let a of arr)
-
-                            if(a.name.startsWith('product'))
-
+                            if (a.name.startsWith('product') && Number(a.value) > 0)
                                 order[a.name] = a.value;
 
                         this.$http.post('/order', order).then(
@@ -1953,7 +1958,7 @@ const vue = new Vue({
             res => this.products = JSON.parse(res.bodyText)
         )
 
-        if(document.cookie.length > 0)
+        if (document.cookie.length > 0)
             this.count = document.cookie.split('; ').length
     },
     methods: {
@@ -1989,9 +1994,7 @@ const vue = new Vue({
             let model = document.querySelector('#model').value;
             let generation = document.querySelector('#generation').value;
             let pattern = document.querySelector('#pattern').value;
-            let ins = document.querySelector('#in-stock').value;
-
-            console.log(ins)
+            let instock = document.querySelector('#in-stock').checked;
 
             page = '?page=' + page;
 
@@ -2010,13 +2013,10 @@ const vue = new Vue({
             if (pattern !== '')
                 pattern = '&pattern=' + pattern;
 
-            console.log('/products'
-                + page
-                + category
-                + brand
-                + model
-                + generation
-                + pattern)
+            if (instock)
+                instock = '&instock=instock'
+            else
+                instock = ''
 
             this.$http.get('/products'
                 + page
@@ -2024,7 +2024,8 @@ const vue = new Vue({
                 + brand
                 + model
                 + generation
-                + pattern).then(
+                + pattern
+                + instock).then(
                 res => this.products = JSON.parse(res.bodyText)
             )
         }
