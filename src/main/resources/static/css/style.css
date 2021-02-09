@@ -1400,10 +1400,15 @@ p.price {
 }
 
 .new-password p {
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     font-size: 16px;
     font-weight: 600;
     color: #646464;
+}
+
+.new-password .incorrect .explanation {
+    margin-bottom: -11px;
+    font-size: 13px;
 }
 
 .new-password input {

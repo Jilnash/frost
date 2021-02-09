@@ -503,4 +503,27 @@ public class Controller {
 
         return order.getId();
     }
+
+    @PostMapping("new-password")
+    public String validatePassword(@RequestBody Map<String, String> map) {
+
+        User user = userRepository.getOne(Long.valueOf(map.get("id")));
+
+        if(map.get("prev").isEmpty())
+            return "empty prev";
+
+        if(!map.get("prev").equals(user.getPassword()))
+            return "prev";
+
+        if(map.get("next").isEmpty() && map.get("again").isEmpty())
+            return "empty next";
+
+        if(!map.get("next").equals(map.get("again")))
+            return "next";
+
+        user.setPassword(map.get("next"));
+        userRepository.save(user);
+
+        return "";
+    }
 }
