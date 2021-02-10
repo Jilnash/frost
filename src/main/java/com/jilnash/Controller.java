@@ -5,10 +5,8 @@ import com.jilnash.model.*;
 import com.jilnash.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.List;
@@ -62,6 +60,9 @@ public class Controller {
 
     @Autowired
     OrderContentRepository orderContentRepository;
+
+    @Autowired
+    OrderProductRepository orderProductRepository;
 
     @GetMapping("/products")
     public List<Product> getProducts(
@@ -491,10 +492,18 @@ public class Controller {
 
                 Product product = productRepository.getOne(id);
 
+                OrderProduct orderProduct = new OrderProduct();
+
+                orderProduct.setName(product.getName());
+                orderProduct.setPrice(product.getPrice());
+                orderProduct.setProduct(product);
+
+                orderProductRepository.save(orderProduct);
+
                 OrderContent orderContent = new OrderContent();
 
                 orderContent.setOrder(order);
-                orderContent.setProduct(product);
+                orderContent.setOrderProduct(orderProduct);
                 orderContent.setCount(count);
 
                 orderContentRepository.save(orderContent);

@@ -1786,8 +1786,8 @@ let user = {
                                     <div class="order-details">
                                         <p class="mobile-name">Наименования товара</p>
                                         <template v-for="content in order.orderContents">
-                                            <p class="name">{{ content.product.name }}</p>
-                                            <p class="count">{{ content.count }} X {{ content.product.price }} тг</p>
+                                            <p class="name">{{ content.orderProduct.name }}</p>
+                                            <p class="count">{{ content.count }} X {{ content.orderProduct.price }} тг</p>
                                         </template>
                                     </div>
                                     <div class="row">

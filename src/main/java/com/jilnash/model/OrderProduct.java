@@ -1,6 +1,5 @@
 package com.jilnash.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -8,21 +7,20 @@ import javax.validation.constraints.NotNull;
 
 @Data
 @Entity
-@Table(name = "order_content")
-public class OrderContent {
+@Table(name = "order_products")
+public class OrderProduct {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @JsonIgnore
-    @ManyToOne
-    private Order order;
+    @NotNull
+    private String name;
+
+    @NotNull
+    private Double price;
 
     @NotNull
     @ManyToOne
-    private OrderProduct orderProduct;
-
-    @NotNull
-    private Integer count;
+    private Product product;
 }
