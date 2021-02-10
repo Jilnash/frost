@@ -387,7 +387,7 @@ let products = {
             model: undefined,
             generation: undefined,
             currentPage: 1,
-            maxPage: 10,
+            maxPage: 9,
             xPage: 0,
             bool: false,
         };
@@ -597,43 +597,43 @@ let products = {
             
                 <input type="hidden" id="page" :value="currentPage">
             
-                <div v-show="currentPage > 1"
+                <div v-if="currentPage > 1"
                      @click="changePage(currentPage - 1)"
                      class="frame backward">
                     <img src="/img/Rectangle%202.2.svg">
                 </div>
                 
-                <div v-show="currentPage > 3"
+                <div v-if="currentPage > 3"
                      @click="changePage(1)" 
                      class="frame number">1</div>
                 
-                <div v-show="currentPage > 3 || bool" 
+                <div v-if="maxPage > 4 && currentPage > 3 || bool" 
                      class="ellipsis">...</div>
                 
-                <div v-show="currentPage === 3 || currentPage === maxPage && maxPage > 2"
+                <div v-if="currentPage === 3 || currentPage === maxPage && maxPage > 2"
                      @click="changePage(currentPage - 2)"
                      class="frame number">{{ currentPage - 2 }}</div>
-                <div v-show="currentPage > 1 && currentPage !== xPage"
+                <div v-if="currentPage > 1"
                      @click="changePage(currentPage - 1)"
                      class="frame number">{{ currentPage - 1 }}</div>
                      
                 <div class="frame number choosen">{{ currentPage }}</div>
                 
-                <div v-show="currentPage < maxPage && currentPage !== 3"
+                <div v-if="currentPage < maxPage"
                      @click="changePage(currentPage + 1)"
                      class="frame number">{{ currentPage + 1 }}</div>
-                <div v-show="currentPage === xPage || currentPage === 1 && maxPage > 2"
+                <div v-if="currentPage === xPage || currentPage === 1 && maxPage > 2"
                      @click="changePage(currentPage + 2)"
                      class="frame number">{{ currentPage + 2 }}</div>
                 
-                <div v-show="currentPage < xPage || bool" 
+                <div v-if="maxPage > 4 && currentPage < xPage || bool" 
                      class="ellipsis">...</div>
                      
-                <div v-show="currentPage < xPage"
+                <div v-if="currentPage < xPage"
                      @click="changePage(maxPage)"
                      class="frame number">{{ maxPage }}</div>
                 
-                <div v-show="currentPage < maxPage"
+                <div v-if="currentPage < maxPage"
                      @click="changePage(currentPage + 1)"
                      class="frame forward">
                     <img src="/img/Rectangle%202.1.svg">
