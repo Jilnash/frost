@@ -1731,6 +1731,7 @@ p.price {
     }
 
     .page-number {
+        justify-content: center;
         margin: 10px auto 60px auto;
     }
 
@@ -1746,7 +1747,7 @@ p.price {
 
     .backward,
     .forward {
-        padding: 0 27px;
+        padding: 0 10px;
     }
 
     .forward::before,

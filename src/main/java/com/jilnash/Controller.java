@@ -8,10 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
 
@@ -74,56 +71,87 @@ public class Controller {
             @RequestParam(name = "generation", required = false) String generation,
             @RequestParam(name = "instock", required = false) String instock) {
 
-        List<Product> result = productRepository.findAll();
+        List<Product> products = productRepository.findAll();
+        Set<Product> wrong = new LinkedHashSet<>();
 
         if (pattern != null) {
 
-            result.removeIf(
-                    product -> !product.getName().contains(pattern)
-                            && !product.getArticle().contains(pattern)
+            products.forEach(p -> {
+                        if (!p.getName().contains(pattern) &&
+                                !p.getArticle().contains(pattern))
+                            wrong.add(p);
+                    }
             );
         }
 
         if (category != null) {
 
-            result.removeIf(
-                    product -> !product.getCategory().getName().equals(category)
+            products.forEach(p -> {
+                        if (!p.getCategory().getName().equals(category))
+                            wrong.add(p);
+                    }
             );
         }
 
         if (brand != null) {
 
-            for (Product p : result) {
+            for (Product p : products) {
+
+                boolean contains = false;
+                Brand containedB = null;
+                Model containedM = null;
 
                 for (ProductBrand pb : p.getProductBrands()) {
 
-                    if (!pb.getBrand().getName().equals(brand)) {
+                    if (pb.getBrand().getName().equals(brand)) {
 
-                        result.remove(p);
+                        containedB = pb.getBrand();
+                        contains = true;
+                        break;
+                    }
+                }
+
+                if(!contains) {
+
+                    wrong.add(p);
+                } else {
+
+                    if(model != null) {
+
+                        contains = false;
+
+                        for(Model m: containedB.getModels()) {
+
+                            if(m.getName().equals(model)) {
+
+                                containedM = m;
+                                contains = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if(!contains) {
+
+                        wrong.add(p);
                     } else {
 
-                        if (model != null) {
+                        if(generation != null) {
 
-                            for (Model m : pb.getBrand().getModels()) {
+                            contains = false;
 
-                                if (!m.getName().equals(model)) {
+                            for(Generation g: containedM.getGenerations()) {
 
-                                    result.remove(p);
-                                } else {
+                                if(g.getName().equals(generation)) {
 
-                                    if (generation != null) {
-
-                                        for (Generation g : m.getGenerations()) {
-
-                                            if (!g.getName().equals(generation)) {
-
-                                                result.remove(p);
-                                            }
-                                        }
-                                    }
+                                    contains = true;
+                                    break;
                                 }
                             }
                         }
+
+                        if(!contains)
+                            wrong.add(p);
                     }
                 }
             }
@@ -131,7 +159,7 @@ public class Controller {
 
         if (instock != null) {
 
-            for (Product p : result) {
+            for (Product p : products) {
 
                 int count = 0;
 
@@ -139,9 +167,17 @@ public class Controller {
                     count += i.getCount();
 
                 if (count == 0)
-                    result.remove(p);
+                    wrong.add(p);
             }
         }
+
+        List<Product> result = new LinkedList<>();
+
+        products.forEach(p -> {
+
+            if (!wrong.contains(p))
+                result.add(p);
+        });
 
         return result;
     }
@@ -365,7 +401,7 @@ public class Controller {
 
         Cookie cookie = new Cookie("product" + map.get("id"), map.get("count"));
 
-        if(cookie.getValue().equals("0")) {
+        if (cookie.getValue().equals("0")) {
 
             cookie.setMaxAge(0);
             cookie.setValue(null);
@@ -518,16 +554,16 @@ public class Controller {
 
         User user = userRepository.getOne(Long.valueOf(map.get("id")));
 
-        if(map.get("prev").isEmpty())
+        if (map.get("prev").isEmpty())
             return "empty prev";
 
-        if(!map.get("prev").equals(user.getPassword()))
+        if (!map.get("prev").equals(user.getPassword()))
             return "prev";
 
-        if(map.get("next").isEmpty() && map.get("again").isEmpty())
+        if (map.get("next").isEmpty() && map.get("again").isEmpty())
             return "empty next";
 
-        if(!map.get("next").equals(map.get("again")))
+        if (!map.get("next").equals(map.get("again")))
             return "next";
 
         user.setPassword(map.get("next"));

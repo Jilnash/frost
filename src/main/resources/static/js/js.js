@@ -394,21 +394,25 @@ let products = {
     },
     props: ['products', 'search'],
     created: function () {
+
         this.$http.get("/categories").then(
             res => this.categories = JSON.parse(res.bodyText)
         );
+
         this.$http.get("/brands").then(
             res => this.brands = JSON.parse(res.bodyText)
         );
-        this.$http.get("/products?page=1").then(
+
+        let device = '?device=';
+
+        (window.innerWidth > 1260)
+            ? device += 'desktop' : device += 'mobile';
+
+        this.$http.get("/products" + device + "&page=1").then(
             res => this.products = JSON.parse(res.bodyText)
         );
 
         this.xPage = this.maxPage - 2;
-
-        if (this.maxPage < 6) {
-            this.xPage = this.maxPage - 2
-        }
     },
     methods: {
         displayDropdown: displayDropdown,
@@ -576,7 +580,7 @@ let products = {
                     </div>
                 </div>
                 <label for="in-stock" class="row">
-                    <input type="checkbox" id="in-stock">
+                    <input @click="search" type="checkbox" id="in-stock">
                     <p>в наличии</p>
                 </label>
             </div>
@@ -2027,10 +2031,6 @@ const vue = new Vue({
     },
     created: function () {
 
-        this.$http.get("/products?page=1").then(
-            res => this.products = JSON.parse(res.bodyText)
-        )
-
         if (document.cookie.length > 0)
             this.count = document.cookie.split('; ').length
     },
@@ -2068,8 +2068,12 @@ const vue = new Vue({
             let generation = document.querySelector('#generation').value;
             let pattern = document.querySelector('#pattern').value;
             let instock = document.querySelector('#in-stock').checked;
+            let device = '?device=';
 
-            page = '?page=' + page;
+            page = '&page=' + page;
+
+            (window.innerWidth > 1260) ?
+                device += 'desktop' : device += 'mobile';
 
             if (category !== '')
                 category = '&category=' + category;
@@ -2092,6 +2096,7 @@ const vue = new Vue({
                 instock = ''
 
             this.$http.get('/products'
+                + device
                 + page
                 + category
                 + brand
