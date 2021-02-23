@@ -1814,6 +1814,7 @@ p.price {
 
     .product-text .descr {
         margin-bottom: 10px;
+        height: unset;
     }
 
     .compatable > p {

@@ -386,13 +386,10 @@ let products = {
             brand: undefined,
             model: undefined,
             generation: undefined,
-            currentPage: 1,
-            maxPage: 9,
-            xPage: 0,
             bool: false,
         };
     },
-    props: ['products', 'search'],
+    props: ['products', 'search', 'maxPage', 'currentPage'],
     created: function () {
 
         this.$http.get("/categories").then(
@@ -403,16 +400,17 @@ let products = {
             res => this.brands = JSON.parse(res.bodyText)
         );
 
-        let device = '?device=';
+        let k;
 
-        (window.innerWidth > 1260)
-            ? device += 'desktop' : device += 'mobile';
+        (window.innerWidth > 1260) ? k = 9 : k = 3;
 
-        this.$http.get("/products" + device + "&page=1").then(
-            res => this.products = JSON.parse(res.bodyText)
+        this.$http.get("/products").then(
+            res => {
+                let list = JSON.parse(res.bodyText);
+                this.products = list.slice(0, k);
+                this.maxPage = Math.ceil(list.length / k);
+            }
         );
-
-        this.xPage = this.maxPage - 2;
     },
     methods: {
         displayDropdown: displayDropdown,
@@ -493,14 +491,11 @@ let products = {
         },
         changePage: function (pageNum) {
 
-            this.currentPage = pageNum;
-            document.querySelector('#page').value = pageNum;
-
             if (this.maxPage > 6) {
                 this.bool = this.currentPage > 3 && this.currentPage < this.maxPage - 2
             }
 
-            this.search();
+            this.search(pageNum);
         },
     },
     template: `
@@ -599,8 +594,6 @@ let products = {
             </div>
             <div class="container row page-number">
             
-                <input type="hidden" id="page" :value="currentPage">
-            
                 <div v-if="currentPage > 1"
                      @click="changePage(currentPage - 1)"
                      class="frame backward">
@@ -626,14 +619,14 @@ let products = {
                 <div v-if="currentPage < maxPage"
                      @click="changePage(currentPage + 1)"
                      class="frame number">{{ currentPage + 1 }}</div>
-                <div v-if="currentPage === xPage || currentPage === 1 && maxPage > 2"
+                <div v-if="currentPage === maxPage - 2 || currentPage === 1 && maxPage > 2"
                      @click="changePage(currentPage + 2)"
                      class="frame number">{{ currentPage + 2 }}</div>
                 
-                <div v-if="maxPage > 4 && currentPage < xPage || bool" 
+                <div v-if="maxPage > 4 && currentPage < maxPage - 2 || bool" 
                      class="ellipsis">...</div>
                      
-                <div v-if="currentPage < xPage"
+                <div v-if="currentPage < maxPage - 2"
                      @click="changePage(maxPage)"
                      class="frame number">{{ maxPage }}</div>
                 
@@ -704,8 +697,6 @@ let product = {
                 res => this.user = JSON.parse(res.bodyText)
             )
         }
-
-        console.log(this.count)
     },
     methods: {
         addToBasket: function (prev, next) {
@@ -1052,8 +1043,6 @@ let order = {
                 }
             }
         }
-
-        console.log(this.count)
     },
     methods: {
         displayContacts: function () {
@@ -2027,6 +2016,8 @@ const vue = new Vue({
             count: 0,
             products: [],
             user: localStorage.user,
+            maxPage: 1,
+            currentPage: 1,
         }
     },
     created: function () {
@@ -2059,21 +2050,22 @@ const vue = new Vue({
                 }
             }
         },
-        search: function () {
+        search: function (pageNum) {
 
-            let page = document.querySelector('#page').value;
+            (typeof pageNum === "number") ?
+                this.currentPage = pageNum :
+                this.currentPage = 1;
+
             let category = document.querySelector('#category').value;
             let brand = document.querySelector('#brand').value;
             let model = document.querySelector('#model').value;
             let generation = document.querySelector('#generation').value;
             let pattern = document.querySelector('#pattern').value;
             let instock = document.querySelector('#in-stock').checked;
-            let device = '?device=';
-
-            page = '&page=' + page;
+            let device;
 
             (window.innerWidth > 1260) ?
-                device += 'desktop' : device += 'mobile';
+                device = 'desktop' : device = 'mobile';
 
             if (category !== '')
                 category = '&category=' + category;
@@ -2096,15 +2088,31 @@ const vue = new Vue({
                 instock = ''
 
             this.$http.get('/products'
-                + device
-                + page
+                + '?device=' + device
                 + category
                 + brand
                 + model
                 + generation
                 + pattern
                 + instock).then(
-                res => this.products = JSON.parse(res.bodyText)
+                res => {
+
+                    let list = JSON.parse(res.bodyText);
+
+                    let k;
+
+                    (device === 'desktop') ? k = 9 : k = 3;
+
+                    this.maxPage = Math.ceil(list.length / k);
+
+                    let from = k * (this.currentPage - 1);
+                    let to = from + k;
+
+                    if (to > list.length)
+                        to = list.length;
+
+                    this.products = list.slice(from, to);
+                }
             )
         }
     },

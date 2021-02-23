@@ -63,7 +63,6 @@ public class Controller {
 
     @GetMapping("/products")
     public List<Product> getProducts(
-            @RequestParam(name = "page") String page,
             @RequestParam(name = "pattern", required = false) String pattern,
             @RequestParam(name = "category", required = false) String category,
             @RequestParam(name = "brand", required = false) String brand,
