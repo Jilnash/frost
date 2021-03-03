@@ -14,8 +14,7 @@
 </head>
 <body>
 <div id="app" v-on:click="bodyFunction">
-    <navbar :products="products"
-            :search="search"
+    <navbar :search="search"
             :user="user"
             :count="count">
     </navbar>
@@ -24,7 +23,8 @@
                  :user="user"
                  :count="count"
                  :max-page="maxPage"
-                 :current-page="currentPage">
+                 :current-page="currentPage"
+                 :add-to-basket="addToBasket">
     </router-view>
     <footerr></footerr>
 </div>

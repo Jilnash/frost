@@ -88,7 +88,7 @@ let changeOption = function (e) {
 }
 
 let navbar = {
-    props: ['products', 'search', 'user', 'count'],
+    props: ['search', 'user', 'count'],
     methods: {
         displayWindow: function (windowClass) {
 
@@ -681,7 +681,7 @@ let product = {
             comments: [],
         }
     },
-    props: ['user', 'count'],
+    props: ['user', 'count', 'addToBasket'],
     created: function () {
 
         this.$http.get('/products/' + this.$route.params.id).then(
@@ -699,25 +699,6 @@ let product = {
         }
     },
     methods: {
-        addToBasket: function (prev, next) {
-
-            if (next !== undefined) {
-
-                if (prev === 0 && next === 1)
-                    this.count++;
-
-                if (prev === 1 && next === 0)
-                    this.count--;
-
-                this.$http.post(
-                    '/basket',
-                    {
-                        id: this.product.id.toString(),
-                        count: next,
-                    },
-                )
-            }
-        },
         displayWindow: function (windowClass) {
 
             displayWindow(windowClass)
@@ -741,7 +722,7 @@ let product = {
                 }
             }
 
-            this.addToBasket(this.c, ++this.c);
+            this.addToBasket(this.product, this.c, ++this.c);
         },
         closeWindows: closeWindows,
         displayChild: function (e) {
@@ -963,10 +944,10 @@ let product = {
                     <div class="row">
                         <p>Укажите количество: </p>
                         <div class="count">
-                            <button v-if="c > 0" @click.prevent="addToBasket(c, --c)">-</button>
-                            <button v-else @click.prevent="addToBasket(c)">-</button>
+                            <button v-if="c > 0" @click.prevent="addToBasket(product, c, --c)">-</button>
+                            <button v-else @click.prevent="addToBasket(product, c)">-</button>
                             <div>{{ c }}</div>
-                            <button @click.prevent="addToBasket(c, ++c)">+</button>
+                            <button @click.prevent="addToBasket(product, c, ++c)">+</button>
                         </div>
                     </div>
                     <router-link :to="'/order'">
@@ -991,7 +972,7 @@ let order = {
             totalAmount: 0,
         };
     },
-    props: ['user', 'count'],
+    props: ['user', 'count', 'addToBasket'],
     created: function () {
 
         this.$http.get("/countries").then(
@@ -1064,7 +1045,7 @@ let order = {
         },
         displayDropdown: displayDropdown,
         changeOption: changeOption,
-        addToBasket: function (product, prev, next, d) {
+        changeCount: function (product, prev, next, d) {
 
             if (next !== undefined) {
 
@@ -1074,25 +1055,13 @@ let order = {
                 if (next < prev && d === undefined)
                     this.total -= product.price;
 
-                if (Number(prev) === 0 && Number(next) === 1)
-                    this.count++;
-
-                if (Number(prev) === 1 && Number(next) === 0)
-                    this.count--;
-
-                this.$http.post(
-                    '/basket',
-                    {
-                        id: product.id,
-                        count: next,
-                    },
-                );
+                this.addToBasket(product, Number(prev), Number(next));
             }
         },
         deleteItem: function (product, count, e) {
 
             if (count > 0)
-                this.addToBasket(product, 1, 0, 'd');
+                this.changeCount(product, 1, 0, 'd');
 
             this.total -= count * product.price;
 
@@ -1391,12 +1360,11 @@ let order = {
                         <div class="row">
                             <div class="count">
                                 <button v-if="item.count > 0" 
-                                        @click.prevent="addToBasket(item.product, item.count, --item.count)">-</button>
+                                        @click.prevent="changeCount(item.product, item.count, --item.count)">-</button>
                                 <button v-else
-                                        @click.prevent="addToBasket(item.product.id, item.count)">-</button>
-                                <div v-if="item.count >= 0">{{ item.count }}</div>
-                                <div v-else="item.count = 0">0</div>
-                                <button @click.prevent="addToBasket(item.product, item.count, ++item.count)">+</button>
+                                        @click.prevent="changeCount(item.product, item.count)">-</button>
+                                <div>{{ item.count }}</div>
+                                <button @click.prevent="changeCount(item.product, item.count, ++item.count)">+</button>
                             </div>
                             <p class="price">{{ item.product.price }} тг</p>
                         </div>
@@ -2114,7 +2082,26 @@ const vue = new Vue({
                     this.products = list.slice(from, to);
                 }
             )
-        }
+        },
+        addToBasket: function (product, prev, next) {
+
+            if (next !== undefined) {
+
+                if (prev === 0 && next === 1)
+                    this.count++;
+
+                if (prev === 1 && next === 0)
+                    this.count--;
+
+                this.$http.post(
+                    '/basket',
+                    {
+                        id: product.id,
+                        count: next,
+                    },
+                )
+            }
+        },
     },
     components: {
         'navbar': navbar,
