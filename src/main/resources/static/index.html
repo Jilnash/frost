@@ -16,7 +16,9 @@
 <div id="app" v-on:click="bodyFunction">
     <navbar :search="search"
             :user="user"
-            :count="count">
+            :count="count"
+            :login="login"
+            :logout="logout">
     </navbar>
     <router-view :products="products"
                  :search="search"

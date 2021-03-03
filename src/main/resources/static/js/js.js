@@ -88,7 +88,7 @@ let changeOption = function (e) {
 }
 
 let navbar = {
-    props: ['search', 'user', 'count'],
+    props: ['search', 'user', 'count', 'login', 'logout'],
     methods: {
         displayWindow: function (windowClass) {
 
@@ -111,43 +111,6 @@ let navbar = {
         displayMobileAuth: function (e) {
             document.querySelector('#mobile-auth').style.display = 'flex'
             document.querySelector('#mobile-auth').style.left = '-188px'
-        },
-        login: function (e) {
-
-            let email = document.querySelector('#log-email');
-            let password = document.querySelector('#log-password');
-
-            let user = {
-                email: email.value,
-                password: password.value,
-            }
-
-            this.$http.post('/login', user).then(
-                res => {
-                    if (res.bodyText === '-1') {
-
-                        email.parentElement.classList.add('incorrect');
-                        password.parentElement.classList.add('incorrect');
-
-                    } else {
-
-                        email.parentElement.classList.remove('incorrect');
-                        password.parentElement.classList.remove('incorrect');
-
-                        closeWindows();
-
-                        this.$http.post('/user', {id: res.bodyText}).then(
-                            result => {
-                                localStorage.user = JSON.parse(result.bodyText).id
-                                this.user = JSON.parse(result.bodyText)
-                            }
-                        )
-                    }
-                });
-        },
-        logout: function () {
-            delete localStorage.user
-            this.user = localStorage.user
         },
         reg: function (e) {
 
@@ -283,7 +246,7 @@ let navbar = {
                             <div v-else class="row" id="mobile-auth">
                                 <router-link @click="closeWindows" :to="'/user'">Личный кабинет</router-link>
                                 <div></div>
-                                <router-link :to="'/products'" @click="logout">Выйти</router-link>
+                                <a @click="logout">Выйти</a>
                             </div>
                         </div>
                         <form class="mobile-search">
@@ -1397,22 +1360,22 @@ let order = {
                     <div>
                         <p>Фамилия</p>
                         <p class="explanation"></p>
-                        <input id="order-surname" class="grey-input" type="text" :value="user.surname">
+                        <input id="order-surname" class="grey-input" type="text" :value="user !== undefined ? user.surname : ''">
                     </div>
                     <div>
                         <p>Имя</p>
                         <p class="explanation"></p>
-                        <input id="order-name" class="grey-input" type="text" :value="user.name">
+                        <input id="order-name" class="grey-input" type="text" :value= "user !== undefined ? user.name : ''">
                     </div>
                     <div>
                         <p>Отчество</p>
                         <p class="explanation"></p>
-                        <input id="order-patronymic" class="grey-input" type="text" :value="user.patronymic">
+                        <input id="order-patronymic" class="grey-input" type="text" :value= "user !== undefined ? user.patronymic : ''">
                     </div>
                     <div>
                         <p>Телефон</p>
                         <p class="explanation"></p>
-                        <input id="order-phone" class="grey-input" type="text" :value="user.phone">
+                        <input id="order-phone" class="grey-input" type="text" :value= "user !== undefined ? user.phone : ''">
                     </div>
                 </div>
                 <div class="vertical-line"></div>
@@ -1452,7 +1415,7 @@ let order = {
                     <div>
                         <p>Город и поселок</p>
                         <p class="explanation"></p>
-                        <input id="order-city" class="grey-input" type="text" :value="user.city">
+                        <input id="order-city" class="grey-input" type="text" :value= "user !== undefined ? user.city : ''">
                     </div>
                 </div>
                 <div class="vertical-line"></div>
@@ -1460,18 +1423,18 @@ let order = {
                     <div>
                         <p>Улица</p>
                         <p class="explanation"></p>
-                        <input id="order-street" class="grey-input" type="text" :value="user.street">
+                        <input id="order-street" class="grey-input" type="text" :value= "user !== undefined ? user.street : ''">
                     </div>
                     <div class="row">
                         <div class="col">
                             <p>Дом</p>
                             <p class="explanation"></p>
-                            <input id="order-house" class="grey-input" type="text" :value="user.house">
+                            <input id="order-house" class="grey-input" type="text" :value= "user !== undefined ? user.house : ''">
                         </div>
                         <div class="col">
                             <p>Квартира</p>
                             <p class="explanation"></p>
-                            <input id="order-flat" class="grey-input" type="text" :value="user.flat">
+                            <input id="order-flat" class="grey-input" type="text" :value= "user !== undefined ? user.flat : ''">
                         </div>
                     </div>
                 </div>
@@ -1706,10 +1669,6 @@ let user = {
 
                         flat.parentElement.classList.remove('incorrect');
                     }
-
-                    console.log("shipping")
-                    console.log(user)
-                    console.log(validationMap)
 
                     if (ok)
                         this.$http.post('/user-shipping', user);
@@ -1983,12 +1942,18 @@ const vue = new Vue({
         return {
             count: 0,
             products: [],
-            user: localStorage.user,
+            user: undefined,
             maxPage: 1,
             currentPage: 1,
         }
     },
     created: function () {
+
+        if(localStorage.user) {
+            this.$http.post('/user', {id: localStorage.user}).then(
+                res => this.user = JSON.parse(res.bodyText)
+            )
+        }
 
         if (document.cookie.length > 0)
             this.count = document.cookie.split('; ').length
@@ -1996,10 +1961,8 @@ const vue = new Vue({
     methods: {
         bodyFunction: function (e) {
 
-            if (e.target.classList.contains('backdrop')) {
-
+            if (e.target.classList.contains('backdrop'))
                 closeWindows();
-            }
 
             if (!e.target.classList.contains('select-button')) {
 
@@ -2102,7 +2065,48 @@ const vue = new Vue({
                 )
             }
         },
+        login: function (e) {
+
+            this.search();
+
+            let email = document.querySelector('#log-email');
+            let password = document.querySelector('#log-password');
+
+            let user = {
+                email: email.value,
+                password: password.value,
+            }
+
+            this.$http.post('/login', user).then(
+                res => {
+                    if (res.bodyText === '-1') {
+
+                        email.parentElement.classList.add('incorrect');
+                        password.parentElement.classList.add('incorrect');
+
+                    } else {
+
+                        email.parentElement.classList.remove('incorrect');
+                        password.parentElement.classList.remove('incorrect');
+
+                        closeWindows();
+
+                        this.$http.post('/user', {id: res.bodyText}).then(
+                            result => {
+                                this.user = JSON.parse(result.bodyText);
+                                localStorage.user = this.user.id;
+                            }
+                        )
+                    }
+                });
+        },
+        logout: function () {
+            this.search();
+            delete localStorage.user;
+            this.user = undefined;
+        },
     },
+
     components: {
         'navbar': navbar,
         'footerr': footer,
