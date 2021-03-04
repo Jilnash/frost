@@ -374,6 +374,8 @@ let products = {
                 this.maxPage = Math.ceil(list.length / k);
             }
         );
+
+        this.currentPage = 1;
     },
     methods: {
         displayDropdown: displayDropdown,
@@ -640,6 +642,7 @@ let product = {
         return {
             product: {},
             c: 0,
+            maxCount: 0,
             productBrands: [],
             comments: [],
         }
@@ -650,7 +653,12 @@ let product = {
         this.$http.get('/products/' + this.$route.params.id).then(
             res => {
                 this.product = JSON.parse(res.bodyText);
+
                 this.productBrands = this.product.productBrands;
+
+                this.$http.get('/count?id=' + this.product.id).then(
+                    result => this.maxCount = JSON.parse(result.bodyText)
+                );
             }
         );
 
@@ -685,7 +693,8 @@ let product = {
                 }
             }
 
-            this.addToBasket(this.product, this.c, ++this.c);
+            if(this.maxCount > 0)
+                this.addToBasket(this.product, this.c, ++this.c);
         },
         closeWindows: closeWindows,
         displayChild: function (e) {
@@ -774,9 +783,11 @@ let product = {
                         </div>
                         <div class="product-price">
                             <p><b>{{ product.price }} тг</b></p>
-                            <div class="in-stock">
-                                <p class="text"><b>в наличии</b></p>
-                                <p v-for="instock in product.instocks"
+                            <div :class="(maxCount < 1) ? 'not' : ''" class="in-stock">
+                                <p v-if="maxCount > 0" class="text"><b>в наличии</b></p>
+                                <p v-else class="text"><b>нет в наличии</b></p>
+                                <p v-if="maxCount > 0"
+                                   v-for="instock in product.instocks"
                                    :key="instock.id">
                                    
                                    г. {{ instock.city }}
@@ -910,7 +921,8 @@ let product = {
                             <button v-if="c > 0" @click.prevent="addToBasket(product, c, --c)">-</button>
                             <button v-else @click.prevent="addToBasket(product, c)">-</button>
                             <div>{{ c }}</div>
-                            <button @click.prevent="addToBasket(product, c, ++c)">+</button>
+                            <button v-if="c < maxCount" @click.prevent="addToBasket(product, c, ++c)">+</button>
+                            <button v-else @click.prevent="addToBasket(product, c)">+</button>
                         </div>
                     </div>
                     <router-link :to="'/order'">
@@ -1327,7 +1339,10 @@ let order = {
                                 <button v-else
                                         @click.prevent="changeCount(item.product, item.count)">-</button>
                                 <div>{{ item.count }}</div>
-                                <button @click.prevent="changeCount(item.product, item.count, ++item.count)">+</button>
+                                <button v-if="true" 
+                                        @click.prevent="changeCount(item.product, item.count, ++item.count)">+</button>
+                                <button v-else
+                                        @click.prevent="changeCount(item.product, item.count)">+</button>
                             </div>
                             <p class="price">{{ item.product.price }} тг</p>
                         </div>

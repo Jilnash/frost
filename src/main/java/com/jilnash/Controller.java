@@ -187,6 +187,19 @@ public class Controller {
         return productRepository.findById(id).get();
     }
 
+    @GetMapping("/count")
+    public Integer getCount(@RequestParam(name = "id") Long id) {
+
+        Product product = productRepository.getOne(id);
+
+        Integer count = 0;
+
+        for(Instock i: product.getInstocks())
+            count +=i.getCount();
+
+        return count;
+    }
+
     @GetMapping("/categories")
     public List<Category> getCategories() {
 

@@ -695,12 +695,14 @@ p.parent.x::before {
     height: 255px;
     box-sizing: border-box;
     padding: 40px 40px 25px 30px;
+    position: relative;
 }
 
 .product-price > p{
     font-size: 36px;
     color: black;
     margin-bottom: 9px;
+    width: 203px;
 }
 
 .in-stock {
@@ -721,10 +723,22 @@ p.parent.x::before {
     top: 3px;
 }
 
+.not.in-stock::before {
+    content: url("../img/Group 12.svg");
+    position: absolute;
+    left: -27px;
+    top: 3px;
+}
+
+.not .text {
+    margin-bottom: 67px;
+}
+
 .product-price .button {
     padding: 8px 70px;
-    margin-top: 19px;
     display: block;
+    position: absolute;
+    bottom: 25px;
 }
 
 .product-comments {
