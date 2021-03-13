@@ -654,6 +654,8 @@ let product = {
             res => {
                 this.product = JSON.parse(res.bodyText);
 
+                this.comments = this.product.comments.reverse()
+
                 this.productBrands = this.product.productBrands;
 
                 this.$http.get('/count?id=' + this.product.id).then(
@@ -674,9 +676,9 @@ let product = {
 
             displayWindow(windowClass)
         },
-        displayWindowAndAddToBasket: function (windowClass) {
+        displayWindowAndAddToBasket: function () {
 
-            displayWindow(windowClass);
+            displayWindow('basket-icon');
 
             let cookies = document.cookie.split('; ');
 
@@ -716,6 +718,51 @@ let product = {
                 } else {
                     child.style.display = 'block';
                 }
+            }
+        },
+        comment: function() {
+
+            let id;
+
+            (window.innerWidth >= 1260) ?
+                id = '#comment' :
+                id = '#comment-mobile'
+
+            let text = document.querySelector(id);
+
+            if(text.value.length > 0) {
+
+                this.$http.post('/comment', {
+                    user: this.user.id,
+                    product: this.product.id,
+                    text: text.value,
+                })
+
+                let patron;
+
+                (this.user.patronymic === null) ?
+                    patron = '' :
+                    patron = this.user.patronymic;
+
+                let comment = document.createElement('div');
+                comment.className = 'comment';
+
+                comment.innerHTML = `
+                <div>
+                    <p class="name">
+                    <b>` +
+                        this.user.name + ' ' +
+                        this.user.surname + ' ' +
+                        patron +
+                    `</b>
+                    </p>
+                    <p>` + text.value + `</p>
+                </div>`
+
+                document.querySelector('.comment-list').prepend(comment);
+                document.querySelector('.mobile-comment-list').prepend(comment);
+
+                text.value = '';
             }
         }
     },
@@ -793,7 +840,7 @@ let product = {
                                    г. {{ instock.city }}
                                 </p>
                             </div>
-                            <a href="#" class="button" @click="displayWindowAndAddToBasket('basket-icon')">Купить</a>
+                            <a href="#" class="button" @click="displayWindowAndAddToBasket">Купить</a>
                         </div>
                     </div>
                     <div class="product-comments">
@@ -801,24 +848,24 @@ let product = {
                         <p v-if="user === undefined">
                             Чтобы оставить отзыв <a href="#" @click="displayWindow('login')">войдите на сайт</a>
                         </p>
-                        <input v-else class="grey-input" type="text" placeholder="Оставить отзыв">
-                        <div class="comment">
-                            <p class="name"><b>Константин Константинов Констанинович</b></p>
-                            <p>Несколько лет подбираю в этом магазине, ребята очень быстро подбирают, что нужно и по
-                                адекватным ценам. Спасибо, что вырусаете</p>
-                        </div>
-                        <div class="comment"
-                             v-for="comment in product.comments"
-                             :key="comment.id">
+                        <form v-else class="col">
+                            <input class="grey-input" type="text" placeholder="Оставьте отзыв" id="comment">
+                            <input @click.prevent="comment" type="submit" class="button" value="Оставить отзыв">
+                        </form>
+                        <div class="comment-list">
+                            <div class="comment"
+                                 v-for="comment in comments"
+                                 :key="comment.id">
                              
-                             <p class="name">
-                                <b>
-                                    {{ comment.user.name }}
-                                    {{ comment.user.surname }}
-                                    {{ comment.user.patronymic }}
-                                </b>
-                             </p>
-                             <p>{{ comment.text }}</p>
+                                <p class="name">
+                                    <b>
+                                        {{ comment.user.name }}
+                                        {{ comment.user.surname }}
+                                        {{ comment.user.patronymic }}
+                                    </b>
+                                </p>
+                                <p>{{ comment.text }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -851,7 +898,7 @@ let product = {
                            г. {{ instock.city }}
                         </p>
                     </div>
-                    <a href="#" class="button" @click="displayWindow('basket-icon')">Купить</a>
+                    <a href="#" class="button" @click="displayWindowAndAddToBasket">Купить</a>
                 </div>
                 <div class="product-text">
                     <p><b>Артикул: </b>{{ product.article }}</p>
@@ -893,18 +940,23 @@ let product = {
                     <p v-if="user === undefined">
                         Чтобы оставить отзыв <a href="#" @click="displayWindow('login')">войдите на сайт</a>
                     </p>
-                    <input v-else class="grey-input" type="text" placeholder="Оставить отзыв">
-                    <div class="comment"
-                         v-for="comment in product.comments"
-                         :key="comment.id">
-                         <p class="name">
-                            <b>
-                               {{ comment.user.name }}
-                               {{ comment.user.surname }}
-                               {{ comment.user.patronymic }}
-                            </b>
-                         </p>
-                         <p>{{ comment.text }}</p>
+                    <form v-else class="col">
+                        <input class="grey-input" type="text" placeholder="Оставьте отзыв" id="comment-mobile">
+                        <input @click.prevent="comment" type="submit" class="button" value="Оставить отзыв">
+                    </form>
+                    <div class="mobile-comment-list">
+                        <div class="comment"
+                             v-for="comment in product.comments"
+                             :key="comment.id">
+                            <p class="name">
+                                <b>
+                                    {{ comment.user.name }}
+                                    {{ comment.user.surname }}
+                                    {{ comment.user.patronymic }}
+                                </b>
+                            </p>
+                            <p>{{ comment.text }}</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1488,9 +1540,7 @@ let user = {
         if (localStorage.user) {
 
             this.$http.post('/user', {id: localStorage.user}).then(
-                res => {
-                    this.user = JSON.parse(res.bodyText)
-                }
+                res => this.user = JSON.parse(res.bodyText)
             )
         }
     },
@@ -2065,10 +2115,10 @@ const vue = new Vue({
 
             if (next !== undefined) {
 
-                if (prev === 0 && next === 1)
+                if (Number(prev) === 0 && Number(next) === 1)
                     this.count++;
 
-                if (prev === 1 && next === 0)
+                if (Number(prev) === 1 && Number(next) === 0)
                     this.count--;
 
                 this.$http.post(
@@ -2080,9 +2130,7 @@ const vue = new Vue({
                 )
             }
         },
-        login: function (e) {
-
-            this.search();
+        login: function () {
 
             let email = document.querySelector('#log-email');
             let password = document.querySelector('#log-password');
@@ -2114,11 +2162,17 @@ const vue = new Vue({
                         )
                     }
                 });
+
+            if(this.$router.currentRoute.path === '/')
+                this.search();
         },
         logout: function () {
-            this.search();
+
             delete localStorage.user;
             this.user = undefined;
+
+            if(this.$router.currentRoute.path === '/')
+                this.search();
         },
     },
 

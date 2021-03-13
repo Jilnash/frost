@@ -583,4 +583,22 @@ public class Controller {
 
         return "";
     }
+
+    @PostMapping("comment")
+    public void comment(@RequestBody Map<String, String> map) {
+
+        if(!map.get("text").isEmpty()) {
+
+            User user = userRepository.getOne(Long.valueOf(map.get("user")));
+            Product product = productRepository.getOne(Long.valueOf(map.get("product")));
+
+            Comment comment = new Comment();
+
+            comment.setUser(user);
+            comment.setProduct(product);
+            comment.setText(map.get("text"));
+
+            commentRepository.save(comment);
+        }
+    }
 }
