@@ -837,7 +837,7 @@ let product = {
                                    v-for="instock in product.instocks"
                                    :key="instock.id">
                                    
-                                   г. {{ instock.city }}
+                                   г. {{ instock.stock.name }}
                                 </p>
                             </div>
                             <a href="#" class="button" @click="displayWindowAndAddToBasket">Купить</a>
@@ -1069,6 +1069,10 @@ let order = {
             document.querySelector('.order-body').style.marginBottom = '729px';
             document.querySelector('.end').classList.add('choosen');
             document.querySelector('.shipping-data').classList.remove('choosen')
+        },
+        displayWindow: function (windowClass) {
+
+            displayWindow(windowClass);
         },
         displayDropdown: displayDropdown,
         changeOption: changeOption,
@@ -1512,7 +1516,8 @@ let order = {
                     <img src="/img/Group%208.svg">
                     <p>Заказ №{{ number }} был создан. Вы можете просмотреть список всех ваших заказов в личном кабинете.</p>
                 </div>
-                <router-link :to="'/user'">Перейти в личный кабинет</router-link>
+                <router-link v-if="user !== undefined" :to="'/user'">Перейти в личный кабинет</router-link>
+                <a  v-else href="#" @click="displayWindow('login')">Войти в личный кабинет</a>
             </div>
         </div>
     </div>

@@ -19,7 +19,8 @@ public class Instock {
     private Long id;
 
     @NotNull
-    private String city;
+    @ManyToOne
+    private Stock stock;
 
     @NotNull(message = "Задайте количество продукта")
     private Integer count;
