@@ -2053,68 +2053,71 @@ const vue = new Vue({
         },
         search: function (pageNum) {
 
-            (typeof pageNum === "number") ?
-                this.currentPage = pageNum :
-                this.currentPage = 1;
+            if(this.$router.currentRoute.path === '/') {
 
-            let category = document.querySelector('#category').value;
-            let brand = document.querySelector('#brand').value;
-            let model = document.querySelector('#model').value;
-            let generation = document.querySelector('#generation').value;
-            let pattern = document.querySelector('#pattern').value;
-            let instock = document.querySelector('#in-stock').checked;
-            let device;
+                (typeof pageNum === "number") ?
+                    this.currentPage = pageNum :
+                    this.currentPage = 1;
 
-            (window.innerWidth > 1260) ?
-                device = 'desktop' : device = 'mobile';
+                let category = document.querySelector('#category').value;
+                let brand = document.querySelector('#brand').value;
+                let model = document.querySelector('#model').value;
+                let generation = document.querySelector('#generation').value;
+                let pattern = document.querySelector('#pattern').value;
+                let instock = document.querySelector('#in-stock').checked;
+                let device;
 
-            if (category !== '')
-                category = '&category=' + category;
+                (window.innerWidth > 1260) ?
+                    device = 'desktop' : device = 'mobile';
 
-            if (brand !== '')
-                brand = '&brand=' + brand;
+                if (category !== '')
+                    category = '&category=' + category;
 
-            if (model !== '')
-                model = '&model=' + model;
+                if (brand !== '')
+                    brand = '&brand=' + brand;
 
-            if (generation !== '')
-                generation = '&generation=' + generation;
+                if (model !== '')
+                    model = '&model=' + model;
 
-            if (pattern !== '')
-                pattern = '&pattern=' + pattern;
+                if (generation !== '')
+                    generation = '&generation=' + generation;
 
-            if (instock)
-                instock = '&instock=instock'
-            else
-                instock = ''
+                if (pattern !== '')
+                    pattern = '&pattern=' + pattern;
 
-            this.$http.get('/products'
-                + '?device=' + device
-                + category
-                + brand
-                + model
-                + generation
-                + pattern
-                + instock).then(
-                res => {
+                if (instock)
+                    instock = '&instock=instock'
+                else
+                    instock = ''
 
-                    let list = JSON.parse(res.bodyText);
+                this.$http.get('/products'
+                    + '?device=' + device
+                    + category
+                    + brand
+                    + model
+                    + generation
+                    + pattern
+                    + instock).then(
+                    res => {
 
-                    let k;
+                        let list = JSON.parse(res.bodyText);
 
-                    (device === 'desktop') ? k = 9 : k = 3;
+                        let k;
 
-                    this.maxPage = Math.ceil(list.length / k);
+                        (device === 'desktop') ? k = 9 : k = 3;
 
-                    let from = k * (this.currentPage - 1);
-                    let to = from + k;
+                        this.maxPage = Math.ceil(list.length / k);
 
-                    if (to > list.length)
-                        to = list.length;
+                        let from = k * (this.currentPage - 1);
+                        let to = from + k;
 
-                    this.products = list.slice(from, to);
-                }
-            )
+                        if (to > list.length)
+                            to = list.length;
+
+                        this.products = list.slice(from, to);
+                    }
+                )
+            }
         },
         addToBasket: function (product, prev, next) {
 
