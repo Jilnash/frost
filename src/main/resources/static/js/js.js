@@ -2181,6 +2181,8 @@ const vue = new Vue({
 
             if(this.$router.currentRoute.path === '/')
                 this.search();
+
+            this.$router.push('/');
         },
     },
 
