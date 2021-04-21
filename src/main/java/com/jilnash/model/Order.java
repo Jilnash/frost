@@ -22,7 +22,8 @@ public class Order {
     private Long id;
 
     @NotNull
-    private String status;
+    @ManyToOne
+    private Status status;
 
     @NotNull(message = "Задайте имя")
 //    @Pattern(regexp = "", message = "")

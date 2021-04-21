@@ -129,7 +129,7 @@ let navbar = {
                 password: password1.value,
             };
 
-            this.$http.post('/validate-user', user).then(
+            this.$http.post('/user/validate', user).then(
                 res => {
                     let validationMap = JSON.parse(res.bodyText);
 
@@ -228,7 +228,8 @@ let navbar = {
                         <a href="#" @click="displayWindow('reg')" style="margin-top: 6px">Зарегистрироваться</a>
                     </div>
                     <div v-else class="col auth">
-                        <router-link :to="'/user'">Личный кабинет</router-link>
+                        <router-link v-if="user.role.id === 2" :to="'/user'">Личный кабинет</router-link>
+                        <router-link v-else :to="'/admin'">Личный кабинет</router-link>
                         <a href="#" @click="logout" style="margin-top: 6px">Выйти</a>
                     </div>
                     <router-link :to="'/order'" class="basket">
@@ -695,7 +696,7 @@ let product = {
                 }
             }
 
-            if(this.maxCount > 0)
+            if (this.maxCount > 0)
                 this.addToBasket(this.product, this.c, ++this.c);
         },
         closeWindows: closeWindows,
@@ -720,7 +721,7 @@ let product = {
                 }
             }
         },
-        comment: function() {
+        comment: function () {
 
             let id;
 
@@ -730,7 +731,7 @@ let product = {
 
             let text = document.querySelector(id);
 
-            if(text.value.length > 0) {
+            if (text.value.length > 0) {
 
                 this.$http.post('/comment', {
                     user: this.user.id,
@@ -751,9 +752,9 @@ let product = {
                 <div>
                     <p class="name">
                     <b>` +
-                        this.user.name + ' ' +
-                        this.user.surname + ' ' +
-                        patron +
+                    this.user.name + ' ' +
+                    this.user.surname + ' ' +
+                    patron +
                     `</b>
                     </p>
                     <p>` + text.value + `</p>
@@ -1137,7 +1138,7 @@ let order = {
                 password1: password1.value,
             }
 
-            this.$http.post('/validate-order-contacts', order).then(
+            this.$http.post('/order/validate/contacts', order).then(
                 res => {
 
                     let validationMap = JSON.parse(res.bodyText);
@@ -1252,7 +1253,7 @@ let order = {
                 flat: flat.value,
             }
 
-            this.$http.post('/validate-order-shipping', order).then(
+            this.$http.post('/order/validate/shipping', order).then(
                 res => {
 
                     let validationMap = JSON.parse(res.bodyText);
@@ -1601,7 +1602,7 @@ let user = {
                 phone: phone.value,
             }
 
-            this.$http.post('/validate-user-contacts', user).then(
+            this.$http.post('/user/validate/contacts', user).then(
                 res => {
 
                     let validationMap = JSON.parse(res.bodyText);
@@ -1666,7 +1667,7 @@ let user = {
                     console.log(validationMap);
 
                     if (ok)
-                        this.$http.post('/user-contacts', user);
+                        this.$http.post('/user/contacts', user);
                 }
             )
         },
@@ -1691,7 +1692,7 @@ let user = {
                 flat: flat.value,
             }
 
-            this.$http.post('/validate-user-shipping', user).then(
+            this.$http.post('/user/validate/shipping', user).then(
                 res => {
 
                     let validationMap = JSON.parse(res.bodyText);
@@ -1741,7 +1742,7 @@ let user = {
                     }
 
                     if (ok)
-                        this.$http.post('/user-shipping', user);
+                        this.$http.post('/user/shipping', user);
                 }
             )
         }
@@ -1982,6 +1983,613 @@ let new_password = {
     `,
 }
 
+let admin = {
+    template: `
+    <div class="container col admin">
+        <router-link :to="'/admin/params'">Параметры</router-link>
+        <router-link :to="'/admin/products'">Товары</router-link>
+        <router-link :to="'/admin/orders'">Заказы</router-link>
+    </div>
+    `
+}
+
+let adminOrders = {
+    data: function () {
+        return {
+            orders: [],
+            statuses: [],
+        }
+    },
+    created: function() {
+
+        this.$http.get("/orders").then(
+            res => this.orders = JSON.parse(res.bodyText)
+        );
+
+        this.$http.get("/statuses").then(
+            res => this.statuses = JSON.parse(res.bodyText)
+        );
+    },
+    methods: {
+        search: function() {
+
+            let id = document.querySelector('#id').value;
+            let after = document.querySelector('#after').value;
+            let before = document.querySelector('#before').value;
+            let status = document.querySelector('#status').value;
+            let phone = document.querySelector('#phone').value;
+
+            if(id !== '')
+                id = '&id=' + id;
+
+            if(after !== '')
+                after = '&after=' + after;
+
+            if(before !== '')
+                before = '&before=' + before;
+
+            if(status !== '')
+                status = '&status=' + status;
+
+            if(phone !== '')
+                phone = '&phone=' + phone;
+
+            this.$http.get('/orders?p=p' + id + after + before + status + phone).then(
+                res => this.orders = JSON.parse(res.bodyText)
+            )
+        }
+    },
+    template: `
+    <div class="container admin-orders"> 
+        <p class="h">Заказы</p>
+        <div class="row order-filter">
+            <div class="row">
+                <p>ID</p>
+                <input type="text" id="id" @change="search">
+            </div>
+            <div class="row">
+                <p>После</p>
+                <input type="date" id="after" @change="search">
+            </div>
+            <div class="row">
+                <p>До</p>
+                <input type="date" id="before" @change="search">
+            </div>
+            <select @change="search" id="status">
+                <option value="" selected>Все</option>
+                <option v-for="s in statuses" :value="s.id">{{ s.name }}</option>
+            </select>
+            <div class="row">
+                <p>Телефон</p>
+                <input type="text" id="phone">
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <td>ID</td>
+                    <td>Информация</td>
+                    <td class="date">Дата</td>
+                    <td>Статус</td>
+                    <td>Изменить</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="o in orders">
+                    <td>{{ o.id }}</td>
+                    <td>
+                        <template v-for="c in o.orderContents">
+                            <p class="name">
+                                <router-link :to="'/admin/products/' + c.orderProduct.product.id">
+                                    {{ c.orderProduct.product.name }}
+                            </router-link>
+                            <p class="count">{{ c.count }} X {{ c.orderProduct.price }} тг</p>
+                        </p>
+                        </template>
+                    </td>
+                    <td>{{ o.createdAt.split('T')[0] }}</td>
+                    <td>
+                        <select>
+                            <option v-for="s in statuses"
+                                    :selected="o.status.id === s.id"
+                                    :value="s.id">{{ s.name }}</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="submit" value="Изменить">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    `
+}
+
+let adminProducts = {
+    props: ['search', 'products'],
+    data: function () {
+        return {
+            categories: [],
+            brands: [],
+            models: [],
+            generations: [],
+            brand: false,
+            model: false,
+        }
+    },
+    created: function () {
+
+        this.$http.get("/categories").then(
+            res => this.categories = JSON.parse(res.bodyText)
+        );
+
+        this.$http.get("/brands").then(
+            res => this.brands = JSON.parse(res.bodyText)
+        );
+
+        this.$http.get("/products").then(
+            res => this.products = JSON.parse(res.bodyText)
+        );
+    },
+    methods: {
+        changeValue: function (e) {
+
+            e.currentTarget.firstChild.value = e.currentTarget.value
+        },
+        changeCategory: function (e) {
+
+            this.changeValue(e)
+            this.search();
+        },
+        changeBrand: function (e) {
+
+            this.changeValue(e);
+
+            let name = e.currentTarget.firstChild.value;
+
+            (name === '') ?
+                this.brand = false :
+                this.brand = true;
+
+            (this.brand) ?
+                this.$http.get('/models?brand=' + name).then(
+                    res => this.models = JSON.parse(res.bodyText)) :
+                this.models = [];
+
+            this.model = false;
+            this.generations = [];
+
+            document.querySelector('#model').value = '';
+            document.querySelector('#generation').value = '';
+
+            this.search();
+        },
+        changeModel: function (e) {
+
+            this.changeValue(e);
+
+            let name = e.currentTarget.firstChild.value;
+
+            (name === '') ?
+                this.model = false :
+                this.model = true;
+
+            (this.model) ?
+                this.$http.get('/generations?model=' + name).then(
+
+                  res => this.generations = JSON.parse(res.bodyText)) :
+                this.generations = [];
+
+            document.querySelector('#generation').value = '';
+
+            this.search();
+        },
+        changeGeneration: function (e) {
+
+            this.changeValue(e);
+            this.search();
+        },
+    },
+    template: `
+    <div class="container col admin-products">
+        <div>
+            <router-link :to="'/admin/product/create'">Добавить товар</router-link>
+            <div style="margin-top: 25px">
+                <select @change="changeCategory">
+                    <input type="hidden" id="category">
+                    <option selected="selected" value="">Все категории</option>
+                    <option v-for="c in categories"
+                            :value="c.name">{{ c.name }}</option>
+                </select>
+                <select @change="changeBrand">
+                    <input type="hidden" id="brand">
+                    <option selected="selected" value="">Все марки</option>
+                    <option v-for="b in brands"
+                            :value="b.name">{{ b.name }}</option>
+                </select>
+                <select @change="changeModel">
+                    <input type="hidden" id="model">
+                    <option selected="selected" value="">Все модели</option>
+                    <option v-if="!brand" value="">Выберите марку</option>
+                    <option v-else v-for="m in models"
+                            :value="m.name">{{ m.name }}</option>
+                </select>
+                <select @change="changeGeneration">
+                    <input type="hidden" id="generation">
+                    <option selected="selected" value="">Все поколения</option>
+                    <option v-if="!model" value="">Выберите модель</option>
+                    <option v-else 
+                            v-for="g in generations"
+                            :value="g.name">{{ g.name }}</option>
+                </select>
+                <input type="checkbox" id="in-stock" @click="search">
+                <label for="in-stock">в наличии</label>
+            </div>
+        </div>
+        <div class="col products"> 
+            <table>
+                <thead>
+                    <tr>
+                        <td class="id">ID</td>
+                        <td>Имя</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="p in products">
+                        <td class="id">{{ p.id }}</td>
+                        <td class="name">
+                            <router-link :to="'/admin/products/' + p.id">{{ p.name }}</router-link>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    `
+}
+
+let adminProduct = {
+    data: function () {
+        return {
+            product: {},
+            categories: [],
+            generations: [],
+            containedG: [],
+            stocks: [],
+        }
+    },
+    methods: {
+        alter: function () {
+
+            let generations = [];
+
+            for(let g of document.querySelectorAll('input[type=checkbox][checked]'))
+                generations.push(g.id)
+
+            generations = generations.join(' ')
+
+            let name = document.querySelector('#name')
+            let article = document.querySelector('#article')
+            let manufacturer = document.querySelector('#manufacturer')
+            let description = document.querySelector('#description')
+            let price = document.querySelector('#price')
+
+            let product = {
+                name: name.value,
+                article: article.value,
+                manufacturer: manufacturer.value,
+                description: description.value,
+                price: price.value,
+                generations: generations,
+            }
+
+            this.$http.post('/product/validate', product).then(
+                res => {
+                    let map = JSON.parse(res.bodyText);
+
+                    let ok = true;
+
+                    if (map.name !== undefined) {
+
+                        ok = false;
+                        name.parentElement.classList.add('incorrect');
+                        name.previousElementSibling.textContent = map.name;
+
+                    } else {
+
+                        name.parentElement.classList.remove('incorrect');
+                    }
+
+                    if (map.article !== undefined) {
+
+                        ok = false;
+                        article.parentElement.classList.add('incorrect');
+                        article.previousElementSibling.textContent = map.article;
+
+                    } else {
+
+                        article.parentElement.classList.remove('incorrect');
+                    }
+
+                    if (map.manufacturer !== undefined) {
+
+                        ok = false;
+                        manufacturer.parentElement.classList.add('incorrect');
+                        manufacturer.previousElementSibling.textContent = map.manufacturer;
+
+                    } else {
+
+                        manufacturer.parentElement.classList.remove('incorrect');
+                    }
+
+                    if (map.description !== undefined) {
+
+                        ok = false;
+                        description.parentElement.classList.add('incorrect');
+                        description.previousElementSibling.textContent = map.description;
+
+                    } else {
+
+                        description.parentElement.classList.remove('incorrect');
+                    }
+
+                    if (map.price !== undefined) {
+
+                        ok = false;
+                        price.parentElement.classList.add('incorrect');
+                        price.previousElementSibling.textContent = map.price;
+
+                    } else {
+
+                        price.parentElement.classList.remove('incorrect');
+                    }
+
+                    if(ok)
+                        this.$http.post('/product', product)
+                }
+            )
+        }
+    },
+    created: function () {
+
+        this.$http.get('/products/' + this.$route.params.id).then(
+            res => {
+                this.product = JSON.parse(res.bodyText)
+
+                for(let g of this.product.productGenerations)
+                    this.containedG.push(g.generation.id)
+            }
+        );
+
+        this.$http.get('/categories').then(
+            res => this.categories = JSON.parse(res.bodyText)
+        );
+
+        this.$http.get('/stocks').then(
+            res => this.stocks = JSON.parse(res.bodyText)
+        );
+
+        this.$http.get('/generations').then(
+            res => this.generations = JSON.parse(res.bodyText)
+        );
+    },
+    template: `
+    <div class="container admin-product">
+        <p class="h">Изображения</p>
+        <div class="row imgs">
+            <div>
+                <img src="../img/5003-01.png">
+            </div>
+            <div>
+                <img src="../img/5003-02.png">
+            </div>
+            <div>
+                <img src="../img/5003-03.png">
+            </div>
+            <div>
+                <img src="../img/5003-04.png">
+            </div>
+        </div>
+        <p class="h">Основное</p>
+        <div class="col">
+            <select>
+                <template v-for="c in categories">
+                    <option v-if="c.id === product.category.id" 
+                            :value="c.id"
+                            selected >{{ c.name }}</option>
+                    <option v-else :value="c.id">{{ c.name }}</option>        
+                </template>
+            </select>
+            <div>
+                <p>Название</p>
+                <p class="explanation"></p>
+                <input type="text" id="name" :value="product.name">
+            </div>
+            <div>
+                <p>Артикул</p>
+                <p class="explanation"></p>
+                <input type="text" id="article" :value="product.article">
+            </div>
+            <div>
+                <p>Производитель</p>
+                <p class="explanation"></p>
+                <input type="text" id="manufacturer" :value="product.manufacturer">
+            </div>
+            <div>
+                <p>Описание</p>
+                <p class="explanation"></p>
+                <input type="text" id="description" :value="product.description">
+            </div>
+            <div>
+                <p>Цена</p>
+                <p class="explanation"></p>
+                <input type="text" id="price" :value="product.price">
+            </div>
+            <p class="h">Склады</p>
+            <div class="col instock">
+                <div v-for="s in stocks" class="row">
+                    <p class="city">{{ s.name }}</p>
+                    <input type="text" class="count" :value="s.count">
+                </div>
+            </div>
+            <p class="h">Поколения</p>
+            <div class="generations">
+                <div v-for="g in generations">
+                    <label :for="g.id">{{ g.name }}</label>
+                    <input  type="checkbox" :id="g.id" :checked="containedG.includes(g.id)">
+                </div>
+            </div>
+            <input type="submit" value="Сохранить изменения" @click="alter">
+        </div>
+    </div>
+    `
+}
+
+let adminCreateProduct = {
+    data: function () {
+        return {
+            categories: [],
+            generations: [],
+            stocks: [],
+        }
+    },
+    created: function () {
+
+        this.$http.get('/categories').then(
+            res => this.categories = JSON.parse(res.bodyText)
+        );
+
+        this.$http.get('/generations').then(
+            res => this.generations = JSON.parse(res.bodyText)
+        );
+
+        this.$http.get('/stocks').then(
+            res => this.stocks = JSON.parse(res.bodyText)
+        );
+    },
+    template: `
+    <div class="container admin-product">
+        <p class="h">Изображения</p>
+        <div class="row imgs">
+            <input type="file">
+        </div>
+        <p class="h">Основное</p>
+        <div class="col">
+            <select>
+                <option selected="selected">Все категории</option>
+                <option v-for="c in categories" :value="c.id">{{ c.name }}</option>
+            </select>
+            <div>
+                <p>Название</p>
+                <input type="text">
+            </div>
+            <div>
+                <p>Артикул</p>
+                <input type="text">
+            </div>
+            <div>
+                <p>Производитель</p>
+                <input type="text">
+            </div>
+            <div>
+                <p>Описание</p>
+                <input type="text">
+            </div>
+            <div>
+                <p>Цена</p>
+                <input type="text">
+            </div>
+        </div>
+        <p class="h">Склады</p>
+        <div class="col instock">
+            <div v-for="s in stocks" class="row">
+                <p class="city">{{ s.name }}</p>
+                <input type="text" class="count">
+            </div>
+        </div>
+        <p class="h">Поколения</p>
+        <div class="generations">
+            <div v-for="g in generations">
+                <label :for="g.id">{{ g.name}}</label>
+                <input type="checkbox" :id="g.id">
+            </div>
+        </div>
+        <input type="submit" value="Сохранить">
+    </div>
+    `
+}
+
+let adminParams = {
+    data: function() {
+        return {
+            categories: [],
+            brands: [],
+            stocks: []
+        }
+    },
+    created: function() {
+
+        this.$http.get('/categories').then(
+            res => this.categories = JSON.parse(res.bodyText)
+        );
+
+        this.$http.get('/brands').then(
+            res => this.brands = JSON.parse(res.bodyText)
+        );
+
+        this.$http.get('/stocks').then(
+            res => this.stocks = JSON.parse(res.bodyText)
+        );
+    },
+    template: `
+    <div class="container col admin-params">
+        <div class="categories">
+            <p class="h">Категории</p>
+            <a href="#">Добавить</a>
+            <div class="category" v-for="c in categories">
+                <input type="text" :value="c.name">
+                <input type="submit" value="Изменить">
+                <a href="#">Удалить</a>
+            </div>
+        </div>
+        <div class="brands">
+            <p class="h">Марки, модели, поколения</p>
+            <a href="#">Добавить</a>
+            <div class="brand" v-for="b in brands">
+                <input type="text" :value="b.name">
+                <input type="submit" value="Изменить">
+                <a href="#">Удалить</a>
+                <div class="models">
+                    <a href="#">Добавить</a>
+                    <div class="model" v-for="m in b.models">
+                        <input type="text" :value="m.name">
+                        <input type="submit" value="Изменить">
+                        <a href="#">Удалить</a>
+                        <div class="generations">
+                            <a href="#">Добавить</a>
+                            <div class="generation" v-for="g in m.generations">
+                                <input type="text" :value="g.name">
+                                <input type="submit" value="Изменить">
+                                <a href="#">Удалить</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="instocks">
+            <p class="h">Склады</p>
+            <a href="#">Добавить</a>
+            <div class="instock" v-for="s in stocks">
+                <input type="text" :value="s.name">
+                <input type="submit" value="Изменить">
+                <a href="#">Удалить</a>
+            </div>
+        </div>
+    </div>
+    `
+}
+
 let router = new VueRouter({
     routes: [
         {
@@ -2004,6 +2612,30 @@ let router = new VueRouter({
             path: '/newpassword',
             component: new_password,
         },
+        {
+            path: '/admin',
+            component: admin,
+        },
+        {
+            path: '/admin/orders',
+            component: adminOrders,
+        },
+        {
+            path: '/admin/products',
+            component: adminProducts,
+        },
+        {
+            path: '/admin/products/:id',
+            component: adminProduct,
+        },
+        {
+            path: '/admin/product/create',
+            component: adminCreateProduct,
+        },
+        {
+            path: '/admin/params',
+            component: adminParams,
+        }
     ]
 })
 
@@ -2019,7 +2651,7 @@ const vue = new Vue({
     },
     created: function () {
 
-        if(localStorage.user) {
+        if (localStorage.user) {
             this.$http.post('/user', {id: localStorage.user}).then(
                 res => this.user = JSON.parse(res.bodyText)
             )
@@ -2053,7 +2685,9 @@ const vue = new Vue({
         },
         search: function (pageNum) {
 
-            if(this.$router.currentRoute.path === '/') {
+            let path = this.$router.currentRoute.path;
+
+            if (path === '/' || path === '/admin/products') {
 
                 (typeof pageNum === "number") ?
                     this.currentPage = pageNum :
@@ -2114,7 +2748,10 @@ const vue = new Vue({
                         if (to > list.length)
                             to = list.length;
 
-                        this.products = list.slice(from, to);
+                        if (path === '/')
+                            this.products = list.slice(from, to);
+                        else
+                            this.products = list;
                     }
                 )
             }
@@ -2171,7 +2808,7 @@ const vue = new Vue({
                     }
                 });
 
-            if(this.$router.currentRoute.path === '/')
+            if (this.$router.currentRoute.path === '/')
                 this.search();
         },
         logout: function () {
@@ -2179,7 +2816,7 @@ const vue = new Vue({
             delete localStorage.user;
             this.user = undefined;
 
-            if(this.$router.currentRoute.path === '/')
+            if (this.$router.currentRoute.path === '/')
                 this.search();
 
             this.$router.push('/');
@@ -2189,11 +2826,6 @@ const vue = new Vue({
     components: {
         'navbar': navbar,
         'footerr': footer,
-        'products': products,
-        'product': product,
-        'order': order,
-        'user': user,
-        'new-password': new_password,
     },
     router,
 }).$mount('#app');

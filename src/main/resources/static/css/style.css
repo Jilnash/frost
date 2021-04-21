@@ -1448,6 +1448,166 @@ p.price {
     height: 50px;
 }
 
+.admin {
+    padding: 50px 0;
+    align-items: center;
+}
+
+.admin > a {
+    font-weight: 600;
+    font-size: 16px;
+    color: black;
+    border: 1px solid #D3D3D3;
+    background: #f7f7f7;
+    display: flex;
+    justify-content: center;
+    width: 150px;
+    padding: 14px 0;
+    margin-bottom: 40px;
+}
+
+.admin-products {
+    padding: 50px 0;
+}
+
+.admin-products select {
+    margin-right: 20px;
+}
+
+.admin-products td {
+    border: 1px solid;
+    padding: 5px 10px;
+}
+
+.admin-products td.id {
+    width: 50px;
+}
+
+.admin-product {
+    padding: 50px 0;
+}
+
+.admin-product p.h {
+    font-size: 30px;
+    border-bottom: 1px solid #989898;
+    margin: 30px 0 20px 0;
+}
+
+.admin-product .imgs {
+    width: 420px;
+}
+
+.imgs div {
+    border: 1px solid #989898;
+}
+
+.admin-product img {
+    width: 80px;
+    height: 80px;
+}
+
+.admin-product input,
+.admin-product p,
+.admin-product select {
+    margin-bottom: 15px;
+}
+
+.admin-product .incorrect .explanation {
+    bottom: 20px;
+}
+
+.admin-product select {
+    width: 183px;
+}
+
+.instock {
+    width: 200px;
+}
+
+.instock div {
+    margin-bottom: 10px;
+}
+
+.instock .count {
+    margin: 0;
+    width: 40px;
+}
+
+.admin-product .generations {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: normal;
+}
+
+.generations div {
+    margin-right: 10px;
+}
+
+.admin-product input[type="submit"] {
+    margin: 50px 0;
+}
+
+.admin-orders {
+    padding: 50px 0;
+}
+
+.admin-orders p.h {
+    font-size: 30px;
+}
+
+.order-filter {
+    justify-content: normal;
+    padding: 30px 0;
+}
+
+.order-filter p {
+    margin-right: 10px;
+}
+
+.order-filter input,
+.order-filter select {
+    margin-right: 19px;
+}
+
+.admin-orders td {
+    border: 1px solid;
+    padding: 30px 10px 0 10px;
+}
+
+.admin-orders td p.name {
+    width: 660px;
+    margin-bottom: 15px;
+}
+
+.admin-orders td p.count {
+    margin-bottom: 35px;
+}
+
+.admin-params {
+    padding: 50px 0;
+}
+
+.admin-params p.h {
+    font-size: 30px;
+    border-bottom: 1px solid #989898;
+    margin: 30px 0 20px 0;
+}
+
+.admin-params input,
+.admin-params a {
+    margin-bottom: 15px;
+}
+
+.admin-params .models,
+.admin-params .generations {
+    margin-left: 25px;
+}
+
+.admin-params .model {
+    display: block;
+    margin: 0;
+}
+
 /*Account*/
 
 @media(max-width: 1260px) {

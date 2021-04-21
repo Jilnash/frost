@@ -8,16 +8,16 @@ import javax.validation.constraints.NotNull;
 
 @Data
 @Entity
-@Table(name = "products_brands")
-public class ProductBrand {
+@Table(name = "products_generations")
+public class  ProductGeneration{
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @NotNull(message = "Задайте марку")
+    @NotNull(message = "Задайте поколение")
     @ManyToOne
-    private Brand brand;
+    private Generation generation;
 
     @NotNull(message = "Задайте продукт")
     @ManyToOne

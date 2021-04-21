@@ -46,7 +46,7 @@ public class Product {
     private Date updatedAt;
 
     @OneToMany(mappedBy = "product")
-    private List<ProductBrand> productBrands;
+    private List<ProductGeneration> productGenerations;
 
     @OneToMany(mappedBy = "product")
     private List<Comment> comments;

@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.*;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
@@ -47,7 +50,7 @@ public class Controller {
     GenerationRepository generationRepository;
 
     @Autowired
-    ProductBrandRepository productBrandRepository;
+    ProductGenerationRepository productGenerationRepository;
 
     @Autowired
     CommentRepository commentRepository;
@@ -60,6 +63,12 @@ public class Controller {
 
     @Autowired
     OrderProductRepository orderProductRepository;
+
+    @Autowired
+    StockRepository stockRepository;
+
+    @Autowired
+    StatusRepository statusRepository;
 
     @GetMapping("/products")
     public List<Product> getProducts(
@@ -100,11 +109,11 @@ public class Controller {
                 Brand containedB = null;
                 Model containedM = null;
 
-                for (ProductBrand pb : p.getProductBrands()) {
+                for (ProductGeneration pg : p.getProductGenerations()) {
 
-                    if (pb.getBrand().getName().equals(brand)) {
+                    if (pg.getGeneration().getModel().getBrand().getName().equals(brand)) {
 
-                        containedB = pb.getBrand();
+                        containedB = pg.getGeneration().getModel().getBrand();
                         contains = true;
                         break;
                     }
@@ -187,6 +196,130 @@ public class Controller {
         return productRepository.findById(id).get();
     }
 
+    @PostMapping("/product/validate")
+    public Map<String, String> validateProduct(@RequestBody Map<String, String> map) {
+
+        Product product = new Product();
+
+        if (!map.get("name").isEmpty())
+            product.setName(map.get("name"));
+
+        if (!map.get("article").isEmpty())
+            product.setArticle(map.get("article"));
+
+        if (!map.get("manufacturer").isEmpty())
+            product.setManufacturer(map.get("manufacturer"));
+
+        if (!map.get("description").isEmpty())
+            product.setDescription(map.get("description"));
+
+        if (!map.get("price").isEmpty())
+            product.setPrice(Double.valueOf(map.get("price")));
+
+        Set<ConstraintViolation<Product>> constr = validator.validate(product);
+
+        Map<String, String> validationMap = new HashMap<>();
+
+        for (ConstraintViolation<Product> c : constr) {
+
+            validationMap.put(c.getPropertyPath().toString(), c.getMessage());
+        }
+
+        return validationMap;
+    }
+
+    @PostMapping("/product")
+    public void saveProduct(@RequestBody Map<String, String> map) {
+
+        Product product = null;
+
+        if(map.get("id") != null)
+            product = productRepository.getOne(Long.valueOf(map.get("id")));
+        else
+            product = new Product();
+
+        product.setName(map.get("name"));
+        product.setArticle(map.get("article"));
+        product.setManufacturer(map.get("manufacturer"));
+        product.setDescription(map.get("description"));
+        product.setPrice(Double.valueOf(map.get("price")));
+
+        List<Generation> generations = new LinkedList<>();
+
+        for(String id: map.get("generations").split(" "))
+            generations.add(generationRepository.getOne(Long.valueOf(id)));
+
+        generations.forEach(g -> {
+            System.out.println(g.getName());
+        });
+    }
+
+    @GetMapping("/orders")
+    public List<Order> getOrders(@RequestParam(name = "id", required = false) Long id,
+                                 @RequestParam(name = "after", required = false) String after,
+                                 @RequestParam(name = "before", required = false) String before,
+                                 @RequestParam(name = "status", required = false) Long status,
+                                 @RequestParam(name = "phone", required = false) String phone) {
+
+        List<Order> orders = orderRepository.findAll();
+        List<Order> wrong = new LinkedList<>();
+
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+
+        if(id != null)
+            orders.forEach(o -> {
+                if(o.getId() != id)
+                    wrong.add(o);
+            });
+
+        if(after != null)
+            orders.forEach(o -> {
+                try {
+                    if(o.getCreatedAt().before(format.parse(after)))
+                        wrong.add(o);
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+            });
+
+        if(before != null)
+            orders.forEach(o -> {
+                try {
+                    if(o.getCreatedAt().after(format.parse(before)))
+                        wrong.add(o);
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+            });
+
+        if(status != null)
+            orders.forEach(o -> {
+                if(o.getStatus().getId() != status)
+                    wrong.add(o);
+            });
+
+        if(phone != null)
+            orders.forEach(o -> {
+                if(!o.getPhone().equals(phone))
+                    wrong.add(o);
+            });
+
+        List<Order> result = new LinkedList<>();
+
+        orders.forEach(o -> {
+            if(!wrong.contains(o))
+                result.add(o);
+        });
+
+        return result;
+    }
+
+    @GetMapping("/statuses")
+    public List<Status> getStatuses() {
+
+        return statusRepository.findAll();
+    }
+
     @GetMapping("/count")
     public Integer getCount(@RequestParam(name = "id") Long id) {
 
@@ -198,6 +331,12 @@ public class Controller {
             count +=i.getCount();
 
         return count;
+    }
+
+    @GetMapping("/stocks")
+    public List<Stock> getStocks() {
+
+        return stockRepository.findAll();
     }
 
     @GetMapping("/categories")
@@ -221,11 +360,13 @@ public class Controller {
     }
 
     @GetMapping("/generations")
-    public List<Generation> getGenerations(@RequestParam(name = "model") String model) {
+    public List<Generation> getGenerations(@RequestParam(name = "model", required = false) String model) {
 
-        return generationRepository.findAllByModel(
-                modelRepository.findByName(model)
-        );
+        if(model != null)
+            return generationRepository.findAllByModel(
+                modelRepository.findByName(model));
+
+        return generationRepository.findAll();
     }
 
     @GetMapping("/countries")
@@ -260,7 +401,7 @@ public class Controller {
         return user.getId();
     }
 
-    @PostMapping("/validate-user")
+    @PostMapping("/user/validate")
     public Map<String, String> validateUser(@RequestBody Map<String, String> map) {
 
         User user = new User();
@@ -303,7 +444,7 @@ public class Controller {
         userRepository.save(user);
     }
 
-    @PostMapping("/validate-user-contacts")
+    @PostMapping("/user/validate/contacts")
     public Map<String, String> validateUserContacts(@RequestBody Map<String, String> map) {
 
         User user = userRepository.getOne(Long.valueOf(map.get("id")));
@@ -335,7 +476,7 @@ public class Controller {
         return validationMap;
     }
 
-    @PostMapping("/user-contacts")
+    @PostMapping("/user/contacts")
     public void userContacts(@RequestBody Map<String, String> map) {
 
         User user = userRepository.getOne(Long.valueOf(map.get("id")));
@@ -349,7 +490,7 @@ public class Controller {
         userRepository.save(user);
     }
 
-    @PostMapping("/validate-user-shipping")
+    @PostMapping("/user/validate/shipping")
     public Map<String, String> validateUserShipping(@RequestBody Map<String, String> map) {
 
         User user = userRepository.getOne(Long.valueOf(map.get("id")));
@@ -388,7 +529,7 @@ public class Controller {
         return validationMap;
     }
 
-    @PostMapping("/user-shipping")
+    @PostMapping("/user/shipping")
     public void userShipping(@RequestBody Map<String, String> map) {
 
         User user = userRepository.getOne(Long.valueOf(map.get("id")));
@@ -422,7 +563,7 @@ public class Controller {
         response.addCookie(cookie);
     }
 
-    @PostMapping("/validate-order-contacts")
+    @PostMapping("/order/validate/contacts")
     public Map<String, String> validateOrderContacts(@RequestBody Map<String, String> map) {
 
         Order order = new Order();
@@ -474,7 +615,7 @@ public class Controller {
         return validationMap;
     }
 
-    @PostMapping("/validate-order-shipping")
+    @PostMapping("/order/validate/shipping")
     public Map<String, String> validateOrderShipping(@RequestBody Map<String, String> map) {
 
         Order order = new Order();
@@ -518,7 +659,7 @@ public class Controller {
             order.setUser(user);
         }
 
-        order.setStatus("created");
+        order.setStatus(statusRepository.getOne(1L));
         order.setName(map.get("name"));
         order.setSurname(map.get("surname"));
         order.setPatronymic(map.get("patronymic"));
