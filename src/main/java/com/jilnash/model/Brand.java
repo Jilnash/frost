@@ -17,7 +17,6 @@ public class Brand {
     private Long id;
 
     @NotNull(message = "Задайте имя марки")
-    @UniqueElements(message = "Имя марки должно быть уникальным")
     private String name;
 
     @OneToMany(mappedBy = "brand")

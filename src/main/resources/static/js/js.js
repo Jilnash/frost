@@ -490,7 +490,8 @@ let products = {
                         <div class="dropdown">
                             <a v-if="category" 
                                @click="changeCategory">Все категории</a>
-                            <a v-for="category in categories" 
+                            <a v-for="category in categories"
+                               v-if="!category.deleted" 
                                :key="category.id" 
                                @click="changeCategory">{{ category.name }}</a>
                         </div>
@@ -2000,7 +2001,7 @@ let adminOrders = {
             statuses: [],
         }
     },
-    created: function() {
+    created: function () {
 
         this.$http.get("/orders").then(
             res => this.orders = JSON.parse(res.bodyText)
@@ -2011,7 +2012,7 @@ let adminOrders = {
         );
     },
     methods: {
-        search: function() {
+        search: function () {
 
             let id = document.querySelector('#id').value;
             let after = document.querySelector('#after').value;
@@ -2019,24 +2020,30 @@ let adminOrders = {
             let status = document.querySelector('#status').value;
             let phone = document.querySelector('#phone').value;
 
-            if(id !== '')
+            if (id !== '')
                 id = '&id=' + id;
 
-            if(after !== '')
+            if (after !== '')
                 after = '&after=' + after;
 
-            if(before !== '')
+            if (before !== '')
                 before = '&before=' + before;
 
-            if(status !== '')
+            if (status !== '')
                 status = '&status=' + status;
 
-            if(phone !== '')
+            if (phone !== '')
                 phone = '&phone=' + phone;
 
             this.$http.get('/orders?p=p' + id + after + before + status + phone).then(
                 res => this.orders = JSON.parse(res.bodyText)
             )
+        },
+        save: function (order) {
+
+            let status = document.querySelector('#o' + order).value;
+
+            this.$http.post('/order/status?order=' + order + '&status=' + status);
         }
     },
     template: `
@@ -2089,14 +2096,14 @@ let adminOrders = {
                     </td>
                     <td>{{ o.createdAt.split('T')[0] }}</td>
                     <td>
-                        <select>
+                        <select :id="'o' + o.id">
                             <option v-for="s in statuses"
                                     :selected="o.status.id === s.id"
                                     :value="s.id">{{ s.name }}</option>
                         </select>
                     </td>
                     <td>
-                        <input type="submit" value="Изменить">
+                        <input type="submit" value="Изменить" @click="save(o.id)">
                     </td>
                 </tr>
             </tbody>
@@ -2176,8 +2183,7 @@ let adminProducts = {
 
             (this.model) ?
                 this.$http.get('/generations?model=' + name).then(
-
-                  res => this.generations = JSON.parse(res.bodyText)) :
+                    res => this.generations = JSON.parse(res.bodyText)) :
                 this.generations = [];
 
             document.querySelector('#generation').value = '';
@@ -2193,12 +2199,13 @@ let adminProducts = {
     template: `
     <div class="container col admin-products">
         <div>
-            <router-link :to="'/admin/product/create'">Добавить товар</router-link>
+            <router-link :to="'/admin/products/-1'">Добавить товар</router-link>
             <div style="margin-top: 25px">
                 <select @change="changeCategory">
                     <input type="hidden" id="category">
                     <option selected="selected" value="">Все категории</option>
                     <option v-for="c in categories"
+                            v-if="!c.deleted" 
                             :value="c.name">{{ c.name }}</option>
                 </select>
                 <select @change="changeBrand">
@@ -2256,6 +2263,8 @@ let adminProduct = {
             generations: [],
             containedG: [],
             stocks: [],
+            containedS: [],
+            count: [],
         }
     },
     methods: {
@@ -2263,11 +2272,22 @@ let adminProduct = {
 
             let generations = [];
 
-            for(let g of document.querySelectorAll('input[type=checkbox][checked]'))
-                generations.push(g.id)
+            for (let g of this.generations)
+                if (g.checked)
+                    generations.push(g.id)
+
+            let stocks = '';
+
+            for (let s of this.stocks) {
+                let value = document.querySelector('#s' + s.id).value;
+
+                if (value !== '')
+                    stocks += s.id + ':' + value + ','
+            }
 
             generations = generations.join(' ')
 
+            let category = document.querySelector('#category')
             let name = document.querySelector('#name')
             let article = document.querySelector('#article')
             let manufacturer = document.querySelector('#manufacturer')
@@ -2275,12 +2295,15 @@ let adminProduct = {
             let price = document.querySelector('#price')
 
             let product = {
+                id: this.product.id,
+                category: category.value,
                 name: name.value,
                 article: article.value,
                 manufacturer: manufacturer.value,
                 description: description.value,
                 price: price.value,
                 generations: generations,
+                stocks: stocks,
             }
 
             this.$http.post('/product/validate', product).then(
@@ -2344,7 +2367,7 @@ let adminProduct = {
                         price.parentElement.classList.remove('incorrect');
                     }
 
-                    if(ok)
+                    if (ok)
                         this.$http.post('/product', product)
                 }
             )
@@ -2356,8 +2379,31 @@ let adminProduct = {
             res => {
                 this.product = JSON.parse(res.bodyText)
 
-                for(let g of this.product.productGenerations)
-                    this.containedG.push(g.generation.id)
+                if (this.product.id !== null)
+                    for (let g of this.product.productGenerations)
+                        this.containedG.push(g.generation.id)
+
+                if (this.product.id !== null)
+                    for (let s of this.product.instocks) {
+                        this.count.push(s.count)
+                        this.containedS.push(s.stock.id)
+                    }
+
+                this.$http.get('/generations').then(
+                    res => {
+                        for (let g of JSON.parse(res.bodyText)) {
+
+                            let b = false;
+
+                            if (this.containedG.includes(g.id))
+                                b = true;
+
+                            this.generations.push(
+                                {id: g.id, name: g.name, checked: b}
+                            )
+                        }
+                    }
+                );
             }
         );
 
@@ -2368,10 +2414,6 @@ let adminProduct = {
         this.$http.get('/stocks').then(
             res => this.stocks = JSON.parse(res.bodyText)
         );
-
-        this.$http.get('/generations').then(
-            res => this.generations = JSON.parse(res.bodyText)
-        );
     },
     template: `
     <div class="container admin-product">
@@ -2379,26 +2421,28 @@ let adminProduct = {
         <div class="row imgs">
             <div>
                 <img src="../img/5003-01.png">
+                <a href="#">Удалить</a>
             </div>
             <div>
                 <img src="../img/5003-02.png">
+                <a href="#">Удалить</a>
             </div>
             <div>
                 <img src="../img/5003-03.png">
+                <a href="#">Удалить</a>
             </div>
             <div>
                 <img src="../img/5003-04.png">
+                <a href="#">Удалить</a>
             </div>
         </div>
         <p class="h">Основное</p>
         <div class="col">
-            <select>
-                <template v-for="c in categories">
-                    <option v-if="c.id === product.category.id" 
-                            :value="c.id"
-                            selected >{{ c.name }}</option>
-                    <option v-else :value="c.id">{{ c.name }}</option>        
-                </template>
+            <select id="category">
+                <option v-for="c in categories" 
+                        :value="c.id" 
+                        :selected="(product.id === null) ? 
+                        (c.id === 1) : (c.id === product.category.id)" >{{ c.name }}</option>
             </select>
             <div>
                 <p>Название</p>
@@ -2429,14 +2473,14 @@ let adminProduct = {
             <div class="col instock">
                 <div v-for="s in stocks" class="row">
                     <p class="city">{{ s.name }}</p>
-                    <input type="text" class="count" :value="s.count">
+                    <input type="text" class="count" :id="'s' + s.id" :value="count[containedS.indexOf(s.id)]">
                 </div>
             </div>
             <p class="h">Поколения</p>
             <div class="generations">
                 <div v-for="g in generations">
                     <label :for="g.id">{{ g.name }}</label>
-                    <input  type="checkbox" :id="g.id" :checked="containedG.includes(g.id)">
+                    <input type="checkbox" :id="g.id" v-model="g.checked">
                 </div>
             </div>
             <input type="submit" value="Сохранить изменения" @click="alter">
@@ -2445,89 +2489,15 @@ let adminProduct = {
     `
 }
 
-let adminCreateProduct = {
-    data: function () {
-        return {
-            categories: [],
-            generations: [],
-            stocks: [],
-        }
-    },
-    created: function () {
-
-        this.$http.get('/categories').then(
-            res => this.categories = JSON.parse(res.bodyText)
-        );
-
-        this.$http.get('/generations').then(
-            res => this.generations = JSON.parse(res.bodyText)
-        );
-
-        this.$http.get('/stocks').then(
-            res => this.stocks = JSON.parse(res.bodyText)
-        );
-    },
-    template: `
-    <div class="container admin-product">
-        <p class="h">Изображения</p>
-        <div class="row imgs">
-            <input type="file">
-        </div>
-        <p class="h">Основное</p>
-        <div class="col">
-            <select>
-                <option selected="selected">Все категории</option>
-                <option v-for="c in categories" :value="c.id">{{ c.name }}</option>
-            </select>
-            <div>
-                <p>Название</p>
-                <input type="text">
-            </div>
-            <div>
-                <p>Артикул</p>
-                <input type="text">
-            </div>
-            <div>
-                <p>Производитель</p>
-                <input type="text">
-            </div>
-            <div>
-                <p>Описание</p>
-                <input type="text">
-            </div>
-            <div>
-                <p>Цена</p>
-                <input type="text">
-            </div>
-        </div>
-        <p class="h">Склады</p>
-        <div class="col instock">
-            <div v-for="s in stocks" class="row">
-                <p class="city">{{ s.name }}</p>
-                <input type="text" class="count">
-            </div>
-        </div>
-        <p class="h">Поколения</p>
-        <div class="generations">
-            <div v-for="g in generations">
-                <label :for="g.id">{{ g.name}}</label>
-                <input type="checkbox" :id="g.id">
-            </div>
-        </div>
-        <input type="submit" value="Сохранить">
-    </div>
-    `
-}
-
 let adminParams = {
-    data: function() {
+    data: function () {
         return {
             categories: [],
             brands: [],
             stocks: []
         }
     },
-    created: function() {
+    created: function () {
 
         this.$http.get('/categories').then(
             res => this.categories = JSON.parse(res.bodyText)
@@ -2541,36 +2511,87 @@ let adminParams = {
             res => this.stocks = JSON.parse(res.bodyText)
         );
     },
+    methods: {
+        displayInput: function (e) {
+
+            let parent = e.currentTarget.parentElement.classList;
+
+            if (parent.contains('create')) {
+
+                parent.remove('create');
+                e.currentTarget.textContent = 'Добавить';
+
+            } else {
+
+                parent.add('create');
+                e.currentTarget.textContent = 'Отмена';
+            }
+        },
+        save: function (param, id, parent, e) {
+
+            let name = e.currentTarget.previousElementSibling.value;
+
+            let res = confirm("Подтвердить изменения")
+
+            if (res)
+                this.$http.post('/param/?param=' + param +
+                    '&name=' + name + '&id=' + id + '&parent=' + parent);
+        },
+        remove: function (param, id) {
+
+            let res = confirm("Подтвердить изменения")
+
+            if (res)
+                this.$http.post('/' + param + '/delete' + '?id=' + id);
+        }
+    },
     template: `
     <div class="container col admin-params">
         <div class="categories">
             <p class="h">Категории</p>
-            <a href="#">Добавить</a>
+            <a class="create-button" @click="displayInput">Добавить</a>
+            <div class="input">
+                <input type="text">
+                <input type="submit" value="Добавить" @click="save('category', -1, -1, $event)">
+            </div>
             <div class="category" v-for="c in categories">
                 <input type="text" :value="c.name">
-                <input type="submit" value="Изменить">
-                <a href="#">Удалить</a>
+                <input v-if="!c.deleted" type="submit" value="Изменить" @click="save('category', c.id, -1, $event)">
+                <input v-if="!c.deleted" type="submit" value="Удалить" @click="remove('category', c.id)">
+                <input v-else type="submit" value="Восстановить" @click="save('category', c.id, -1, $event)">
             </div>
         </div>
         <div class="brands">
             <p class="h">Марки, модели, поколения</p>
-            <a href="#">Добавить</a>
+            <a class="create-button" @click="displayInput">Добавить</a>
+            <div class="input">
+                <input type="text">
+                <input type="submit" value="Добавить" @click="save('brand', -1, -1, $event)">
+            </div>
             <div class="brand" v-for="b in brands">
                 <input type="text" :value="b.name">
-                <input type="submit" value="Изменить">
-                <a href="#">Удалить</a>
+                <input type="submit" value="Изменить" @click="save('brand', b.id, -1, $event)">
+                <input type="submit" @click="remove('brand', b.id)" value="Удалить">
                 <div class="models">
-                    <a href="#">Добавить</a>
+                    <a class="create-button" @click="displayInput">Добавить</a>
+                    <div class="input">
+                        <input type="text">
+                        <input type="submit" value="Добавить" @click="save('model', -1, b.id, $event)">
+                    </div>
                     <div class="model" v-for="m in b.models">
                         <input type="text" :value="m.name">
-                        <input type="submit" value="Изменить">
-                        <a href="#">Удалить</a>
+                        <input type="submit" value="Изменить" @click="save('model', m.id, b.id, $event)">
+                        <input type="submit" @click="remove('model', m.id)" value="Удалить">
                         <div class="generations">
-                            <a href="#">Добавить</a>
+                            <a class="create-button" @click="displayInput">Добавить</a>
+                            <div class="input">
+                                <input type="text">
+                                <input type="submit" value="Добавить" @click="save('generation', -1, m.id, $event)">
+                            </div>
                             <div class="generation" v-for="g in m.generations">
                                 <input type="text" :value="g.name">
-                                <input type="submit" value="Изменить">
-                                <a href="#">Удалить</a>
+                                <input type="submit" value="Изменить" @click="save('generation', g.id, m.id, $event)">
+                                <input type="submit" @click="remove('generation', g.id)" value="Удалить">
                             </div>
                         </div>
                     </div>
@@ -2579,11 +2600,15 @@ let adminParams = {
         </div>
         <div class="instocks">
             <p class="h">Склады</p>
-            <a href="#">Добавить</a>
+            <a class="create-button" @click="displayInput">Добавить</a>
+            <div class="input">
+                <input type="text">
+                <input type="submit" value="Добавить" @click="save('stock', -1, -1, $event)">
+            </div>
             <div class="instock" v-for="s in stocks">
                 <input type="text" :value="s.name">
-                <input type="submit" value="Изменить">
-                <a href="#">Удалить</a>
+                <input type="submit" value="Изменить" @click="save('stock', s.id, $event)">
+                <input type="submit" @click="remove('stock', s.id)" value="Удалить">
             </div>
         </div>
     </div>
@@ -2627,10 +2652,6 @@ let router = new VueRouter({
         {
             path: '/admin/products/:id',
             component: adminProduct,
-        },
-        {
-            path: '/admin/product/create',
-            component: adminCreateProduct,
         },
         {
             path: '/admin/params',

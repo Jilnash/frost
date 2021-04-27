@@ -10,7 +10,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.util.*;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
@@ -70,6 +69,9 @@ public class Controller {
     @Autowired
     StatusRepository statusRepository;
 
+    @Autowired
+    InstockRepository instockRepository;
+
     @GetMapping("/products")
     public List<Product> getProducts(
             @RequestParam(name = "pattern", required = false) String pattern,
@@ -101,66 +103,51 @@ public class Controller {
             );
         }
 
-        if (brand != null) {
+        if(brand != null) {
 
-            for (Product p : products) {
+            for(Product p: products) {
 
-                boolean contains = false;
-                Brand containedB = null;
-                Model containedM = null;
+                boolean containes = false;
 
-                for (ProductGeneration pg : p.getProductGenerations()) {
-
-                    if (pg.getGeneration().getModel().getBrand().getName().equals(brand)) {
-
-                        containedB = pg.getGeneration().getModel().getBrand();
-                        contains = true;
+                for(ProductGeneration pg: p.getProductGenerations())
+                    if(pg.getGeneration().getModel().getBrand().getName().equals(brand)) {
+                        containes = true;
                         break;
                     }
-                }
 
-                if(!contains) {
-
+                if(!containes)
                     wrong.add(p);
-                } else {
+                else {
 
-                    if(model != null) {
+                     if(model != null) {
 
-                        contains = false;
+                         containes = false;
 
-                        for(Model m: containedB.getModels()) {
+                         for(ProductGeneration pg: p.getProductGenerations())
+                             if(pg.getGeneration().getModel().getName().equals(model)) {
+                                 containes = true;
+                                 break;
+                             }
 
-                            if(m.getName().equals(model)) {
+                         if(!containes)
+                             wrong.add(p);
+                         else {
 
-                                containedM = m;
-                                contains = true;
-                                break;
-                            }
-                        }
-                    }
+                             if(generation != null) {
 
-                    if(!contains) {
+                                 containes = false;
 
-                        wrong.add(p);
-                    } else {
+                                 for(ProductGeneration pg: p.getProductGenerations())
+                                     if(pg.getGeneration().getName().equals(generation)) {
+                                         containes = true;
+                                         break;
+                                     }
 
-                        if(generation != null) {
-
-                            contains = false;
-
-                            for(Generation g: containedM.getGenerations()) {
-
-                                if(g.getName().equals(generation)) {
-
-                                    contains = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if(!contains)
-                            wrong.add(p);
-                    }
+                                 if(!containes)
+                                     wrong.add(p);
+                             }
+                         }
+                     }
                 }
             }
         }
@@ -192,6 +179,9 @@ public class Controller {
 
     @GetMapping("/products/{id}")
     public Product getProduct(@PathVariable Long id) {
+
+        if(id == -1)
+            return new Product();
 
         return productRepository.findById(id).get();
     }
@@ -238,20 +228,40 @@ public class Controller {
         else
             product = new Product();
 
+        product.setCategory(categoryRepository.getOne(Long.valueOf(map.get("category"))));
         product.setName(map.get("name"));
         product.setArticle(map.get("article"));
         product.setManufacturer(map.get("manufacturer"));
         product.setDescription(map.get("description"));
         product.setPrice(Double.valueOf(map.get("price")));
 
-        List<Generation> generations = new LinkedList<>();
+        productRepository.save(product);
 
-        for(String id: map.get("generations").split(" "))
-            generations.add(generationRepository.getOne(Long.valueOf(id)));
+        if(map.get("id") != null)
+            productGenerationRepository.deleteProductGenerationByProduct(product);
 
-        generations.forEach(g -> {
-            System.out.println(g.getName());
-        });
+        for(String id: map.get("generations").split(" ")) {
+
+            ProductGeneration pg = new ProductGeneration();
+
+            pg.setGeneration(generationRepository.getOne(Long.valueOf(id)));
+            pg.setProduct(product);
+
+            productGenerationRepository.save(pg);
+        }
+
+        instockRepository.deleteInstocksByProduct(product);
+
+        for(String instock: map.get("stocks").split(",")) {
+
+            Instock is = new Instock();
+
+            is.setProduct(product);
+            is.setStock(stockRepository.getOne(Long.valueOf(instock.split(":")[0])));
+            is.setCount(Integer.valueOf(instock.split(":")[1]));
+
+            instockRepository.save(is);
+        }
     }
 
     @GetMapping("/orders")
@@ -300,7 +310,7 @@ public class Controller {
 
         if(phone != null)
             orders.forEach(o -> {
-                if(!o.getPhone().equals(phone))
+                if(!o.getPhone().startsWith(phone))
                     wrong.add(o);
             });
 
@@ -333,10 +343,94 @@ public class Controller {
         return count;
     }
 
+    @PostMapping("/param")
+    public void saveParam(@RequestParam(name = "param") String param,
+                          @RequestParam(name = "name") String name,
+                          @RequestParam(name = "id", required = false) Long id,
+                          @RequestParam(name = "parent", required = false) Long parent) {
+
+        if(param.equals("category")) {
+
+            Category c = null;
+
+            if (id != -1)
+                c = categoryRepository.getOne(id);
+            else
+                c = new Category();
+
+            c.setName(name);
+            c.setDeleted(false);
+            categoryRepository.save(c);
+        }
+
+        if(param.equals("brand")) {
+
+            Brand b = null;
+
+            if (id != -1)
+                b = brandRepository.getOne(id);
+            else
+                b = new Brand();
+
+            b.setName(name);
+            brandRepository.save(b);
+        }
+
+        if(param.equals("model")) {
+
+            Model m = null;
+
+            if (id != -1)
+                m = modelRepository.getOne(id);
+            else
+                m = new Model();
+
+            m.setName(name);
+            m.setBrand(brandRepository.getOne(parent));
+            modelRepository.save(m);
+        }
+
+        if(param.equals("generation")) {
+
+            Generation g = null;
+
+            if (id != -1)
+                g = generationRepository.getOne(id);
+            else
+                g = new Generation();
+
+            g.setName(name);
+            g.setModel(modelRepository.getOne(parent));
+            generationRepository.save(g);
+        }
+
+        if(param.equals("stock")) {
+
+            Stock s = null;
+
+            if (id != -1)
+                s = stockRepository.getOne(id);
+            else
+                s = new Stock();
+
+            s.setName(name);
+            stockRepository.save(s);
+        }
+    }
+
     @GetMapping("/stocks")
     public List<Stock> getStocks() {
 
         return stockRepository.findAll();
+    }
+
+    @PostMapping("/stock/delete")
+    public void deleteStock(@RequestParam(name = "id") Long id) {
+
+        Stock s = stockRepository.getOne(id);
+
+        instockRepository.deleteInstocksByStock(s);
+        stockRepository.delete(s);
     }
 
     @GetMapping("/categories")
@@ -345,28 +439,108 @@ public class Controller {
         return categoryRepository.findAll();
     }
 
+    @GetMapping("/category")
+    public void saveCategory(@RequestBody Map<String, String> map) {
+
+        Category c = null;
+
+        if(map.get("id") != null)
+            c = categoryRepository.getOne(Long.valueOf(map.get("id")));
+        else
+            c = new Category();
+
+        c.setName(map.get("name"));
+
+        categoryRepository.save(c);
+    }
+
+    @PostMapping("/category/delete")
+    public void deleteCategory(@RequestParam(name = "id") Long id) {
+
+        Category c = categoryRepository.getOne(id);
+        c.setDeleted(true);
+        categoryRepository.save(c);
+    }
+
     @GetMapping("/brands")
     public List<Brand> getBrands() {
 
         return brandRepository.findAll();
     }
 
-    @GetMapping("/models")
-    public List<Model> getModels(@RequestParam(name = "brand") String brand) {
+    @GetMapping("/brand")
+    public void saveBrand(@RequestBody Map<String, String> map) {
 
-        return modelRepository.findAllByBrand(
-                brandRepository.findByName(brand)
-        );
+        Brand b = null;
+
+        if(map.get("id") != null)
+            b = brandRepository.getOne(Long.valueOf(map.get("id")));
+        else
+            b = new Brand();
+
+        b.setName(map.get("name"));
+
+        brandRepository.save(b);
+    }
+
+    @PostMapping("/brand/delete")
+    public void deleteBrand(@RequestParam(name = "id") Long id) {
+
+        Brand b = brandRepository.getOne(id);
+
+        b.getModels().forEach(m -> {
+
+            m.getGenerations().forEach(g -> {
+
+                productGenerationRepository.deleteProductGenerationByGeneration(g);
+                generationRepository.delete(g);
+            });
+
+            modelRepository.delete(m);
+        });
+
+        brandRepository.delete(b);
+    }
+
+    @GetMapping("/models")
+    public List<Model> getModels(@RequestParam(name = "brand", required = false) String brand) {
+
+        if(brand != null)
+            return modelRepository.findAllByBrand(brandRepository.findByName(brand));
+
+        return modelRepository.findAll();
+    }
+
+    @PostMapping("/model/delete")
+    public void deleteModel(@RequestParam(name = "id") Long id) {
+
+        Model m = modelRepository.getOne(id);
+
+        m.getGenerations().forEach(g -> {
+
+            productGenerationRepository.deleteProductGenerationByGeneration(g);
+            generationRepository.delete(g);
+        });
+
+        modelRepository.delete(m);
     }
 
     @GetMapping("/generations")
     public List<Generation> getGenerations(@RequestParam(name = "model", required = false) String model) {
 
         if(model != null)
-            return generationRepository.findAllByModel(
-                modelRepository.findByName(model));
+            return generationRepository.findAllByModel(modelRepository.findByName(model));
 
         return generationRepository.findAll();
+    }
+
+    @PostMapping("/generation/delete")
+    public void deleteGeneration(@RequestParam(name = "id") Long id) {
+
+        Generation g = generationRepository.getOne(id);
+
+        productGenerationRepository.deleteProductGenerationByGeneration(g);
+        generationRepository.delete(g);
     }
 
     @GetMapping("/countries")
@@ -700,6 +874,15 @@ public class Controller {
         });
 
         return order.getId();
+    }
+
+    @PostMapping("/order/status")
+    public void setOrderStatus(@RequestParam(name = "order") Long order,
+                               @RequestParam(name = "status") Long s) {
+
+        Order o = orderRepository.getOne(order);
+        o.setStatus(statusRepository.getOne(s));
+        orderRepository.save(o);
     }
 
     @PostMapping("new-password")

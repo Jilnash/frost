@@ -12,7 +12,7 @@ import javax.validation.constraints.NotNull;
 public class  ProductGeneration{
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull(message = "Задайте поколение")

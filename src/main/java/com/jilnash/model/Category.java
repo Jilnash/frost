@@ -20,6 +20,9 @@ public class Category {
     @NotNull(message = "Задайте имя категории")
     private String name;
 
+    @NotNull
+    private Boolean deleted;
+
     @CreationTimestamp
     @Column(name = "created_at")
     private Date createdAt;
