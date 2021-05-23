@@ -639,13 +639,63 @@ let footer = {
     `,
 }
 
+let comments = Vue.component('comments', {
+    props: ['comments', 'user', 'product'],
+    methods: {
+        comment: function (e) {
+
+            let text = e.target.previousElementSibling;
+
+            if (text.value.length > 0) {
+
+                this.$http.post('/comment', {
+                    user: this.user.id,
+                    product: this.product.id,
+                    text: text.value,
+                })
+
+                this.comments.unshift({
+                    user: this.user,
+                    text: text.value
+                })
+
+                text.value = '';
+            }
+        }
+    },
+    template: `
+    <div class="product-comments">
+        <p class="h3">Отзывы</p>
+            <p v-if="user === undefined">
+                Чтобы оставить отзыв <a href="#" @click="displayWindow('login')">войдите на сайт</a>
+            </p>
+            <form v-else class="col">
+                <input class="grey-input" type="text" placeholder="Оставьте отзыв">
+                <input @click.prevent="comment" type="submit" class="button" value="Оставить отзыв">
+            </form>
+            <div class="comment-list">
+                <div class="comment" v-for="comment in comments" :key="comment.id">
+                    <p class="name">
+                        <b>
+                            {{ comment.user.name }}
+                            {{ comment.user.surname }}
+                            {{ comment.user.patronymic }}
+                        </b>
+                    </p>
+                    <p>{{ comment.text }}</p>
+                </div>
+            </div>
+    </div>
+    `
+});
+
 let product = {
     data: function () {
         return {
             product: {},
             c: 0,
             maxCount: 0,
-            productBrands: [],
+            brands: [],
             comments: [],
         }
     },
@@ -658,13 +708,15 @@ let product = {
 
                 this.comments = this.product.comments.reverse()
 
-                this.productBrands = this.product.productBrands;
-
-                this.$http.get('/count?id=' + this.product.id).then(
+                this.$http.get('/products/' + this.product.id + '/count').then(
                     result => this.maxCount = JSON.parse(result.bodyText)
                 );
             }
         );
+
+        this.$http.get('/products/' + this.$route.params.id + '/brands').then(
+            res => this.brands = JSON.parse(res.bodyText)
+        )
 
         if (localStorage.user) {
 
@@ -722,51 +774,6 @@ let product = {
                 }
             }
         },
-        comment: function () {
-
-            let id;
-
-            (window.innerWidth >= 1260) ?
-                id = '#comment' :
-                id = '#comment-mobile'
-
-            let text = document.querySelector(id);
-
-            if (text.value.length > 0) {
-
-                this.$http.post('/comment', {
-                    user: this.user.id,
-                    product: this.product.id,
-                    text: text.value,
-                })
-
-                let patron;
-
-                (this.user.patronymic === null) ?
-                    patron = '' :
-                    patron = this.user.patronymic;
-
-                let comment = document.createElement('div');
-                comment.className = 'comment';
-
-                comment.innerHTML = `
-                <div>
-                    <p class="name">
-                    <b>` +
-                    this.user.name + ' ' +
-                    this.user.surname + ' ' +
-                    patron +
-                    `</b>
-                    </p>
-                    <p>` + text.value + `</p>
-                </div>`
-
-                document.querySelector('.comment-list').prepend(comment);
-                document.querySelector('.mobile-comment-list').prepend(comment);
-
-                text.value = '';
-            }
-        }
     },
     template: `
     <div>
@@ -794,23 +801,14 @@ let product = {
                         <p>Применим к автомобилям:</p>
                         <div class="grey-frame">
                         
-                            <div class="brand"
-                                 v-for="pb in product.productBrands"
-                                 :key="pb.id">
+                            <div class="brand" v-for="b of brands" :key="b.id">
                                  
-                                 <p class="parent" 
-                                    @click="displayChild">
-                                    {{ pb.brand.name }}
-                                 </p>
+                                 <p class="parent" @click="displayChild">{{ b.name }}</p>
                                  
-                                 <div class="model"
-                                      v-for="model in pb.brand.models"
-                                      :key="model.id">
+                                 <div class="model" v-for="m of b.models" :key="m.id">
                                       
-                                      <p class="parent"
-                                         v-for="generation in model.generations"
-                                         @click="displayChild">
-                                         {{ model.name }} {{ generation.name }}
+                                      <p class="parent" v-for="g of m.generations" @click="displayChild" :key="g.id">
+                                         {{ m.name }} {{ g.name }}
                                       </p>
                                       
                                       <div class="type">
@@ -845,31 +843,7 @@ let product = {
                             <a href="#" class="button" @click="displayWindowAndAddToBasket">Купить</a>
                         </div>
                     </div>
-                    <div class="product-comments">
-                        <p class="h3">Отзывы</p>
-                        <p v-if="user === undefined">
-                            Чтобы оставить отзыв <a href="#" @click="displayWindow('login')">войдите на сайт</a>
-                        </p>
-                        <form v-else class="col">
-                            <input class="grey-input" type="text" placeholder="Оставьте отзыв" id="comment">
-                            <input @click.prevent="comment" type="submit" class="button" value="Оставить отзыв">
-                        </form>
-                        <div class="comment-list">
-                            <div class="comment"
-                                 v-for="comment in comments"
-                                 :key="comment.id">
-                             
-                                <p class="name">
-                                    <b>
-                                        {{ comment.user.name }}
-                                        {{ comment.user.surname }}
-                                        {{ comment.user.patronymic }}
-                                    </b>
-                                </p>
-                                <p>{{ comment.text }}</p>
-                            </div>
-                        </div>
-                    </div>
+                    <comments :user="user" :comments="comments" :product="product"></comments>
                 </div>
             </div>
             <div class="col mobile-product">
@@ -910,23 +884,14 @@ let product = {
                 <div class="compatable">
                     <p>Применим к автомобилям:</p>
                     <div class="grey-frame">
-                        <div class="brand"
-                             v-for="pb in product.productBrands"
-                             :key="pb.id">
+                        <div class="brand" v-for="b of brands" :key="b.id">
                              
-                             <p class="parent" 
-                                @click="displayChild">
-                                {{ pb.brand.name }}
-                             </p>
+                             <p class="parent" @click="displayChild">{{ b.name }}</p>
                              
-                             <div class="model"
-                                  v-for="model in pb.brand.models"
-                                  :key="model.id">
+                             <div class="model" v-for="m of b.models" :key="m.id">
                                   
-                                  <p class="parent"
-                                     v-for="generation in model.generations"
-                                     @click="displayChild">
-                                     {{ model.name }} {{ generation.name }}
+                                  <p class="parent" v-for="g of m.generations" @click="displayChild" :key="g.id">
+                                     {{ m.name }} {{ g.name }}
                                   </p>
                                   
                                   <div class="type">
@@ -937,30 +902,7 @@ let product = {
                         </div>
                     </div>
                 </div>
-                <div class="product-comments">
-                    <p class="h3">Отзывы</p>
-                    <p v-if="user === undefined">
-                        Чтобы оставить отзыв <a href="#" @click="displayWindow('login')">войдите на сайт</a>
-                    </p>
-                    <form v-else class="col">
-                        <input class="grey-input" type="text" placeholder="Оставьте отзыв" id="comment-mobile">
-                        <input @click.prevent="comment" type="submit" class="button" value="Оставить отзыв">
-                    </form>
-                    <div class="mobile-comment-list">
-                        <div class="comment"
-                             v-for="comment in product.comments"
-                             :key="comment.id">
-                            <p class="name">
-                                <b>
-                                    {{ comment.user.name }}
-                                    {{ comment.user.surname }}
-                                    {{ comment.user.patronymic }}
-                                </b>
-                            </p>
-                            <p>{{ comment.text }}</p>
-                        </div>
-                    </div>
-                </div>
+                <comments :user="user" :comments="comments" :product="product"></comments>
             </div>
         </div>
         <div class="backdrop">
@@ -999,6 +941,7 @@ let order = {
             total: 0,
             number: undefined,
             totalAmount: 0,
+            maxCount: {},
         };
     },
     props: ['user', 'count', 'addToBasket'],
@@ -1051,6 +994,10 @@ let order = {
                         }
                     )
                 }
+
+                this.$http.get('/products/' + id + '/count').then(
+                    result => this.maxCount[id.toString()] = JSON.parse(result.bodyText)
+                );
             }
         }
     },
@@ -1397,7 +1344,7 @@ let order = {
                                 <button v-else
                                         @click.prevent="changeCount(item.product, item.count)">-</button>
                                 <div>{{ item.count }}</div>
-                                <button v-if="true" 
+                                <button v-if="item.count < maxCount[item.product.id.toString()]" 
                                         @click.prevent="changeCount(item.product, item.count, ++item.count)">+</button>
                                 <button v-else
                                         @click.prevent="changeCount(item.product, item.count)">+</button>
@@ -1531,6 +1478,7 @@ let user = {
         return {
             countries: [],
             regions: [],
+            orderPrices: {},
         };
     },
     props: ['user'],
@@ -1547,7 +1495,14 @@ let user = {
         if (localStorage.user) {
 
             this.$http.post('/user', {id: localStorage.user}).then(
-                res => this.user = JSON.parse(res.bodyText)
+                res => {
+                    this.user = JSON.parse(res.bodyText)
+
+                    for(let o of this.user.orders)
+                        this.$http.get('/orders/' + o.id + '/price').then(
+                            result => this.orderPrices[o.id.toString()] = JSON.parse(result.bodyText)
+                        );
+                }
             )
         }
     },
@@ -1788,7 +1743,7 @@ let user = {
                                     </div>
                                     <div class="row">
                                         <p class="mobile-price">Стоимость</p>
-                                        <p class="price">100 000 тг</p>
+                                        <p class="price">{{ orderPrices[order.id.toString()] }} тг</p>
                                     </div>
                                 </div>
                             </template>
@@ -2068,7 +2023,7 @@ let adminOrders = {
             </select>
             <div class="row">
                 <p>Телефон</p>
-                <input type="text" id="phone">
+                <input type="text" id="phone" @change="search">
             </div>
         </div>
         <table>
@@ -2078,6 +2033,7 @@ let adminOrders = {
                     <td>Информация</td>
                     <td class="date">Дата</td>
                     <td>Статус</td>
+                    <td>Телефон</td>
                     <td>Изменить</td>
                 </tr>
             </thead>
@@ -2089,7 +2045,7 @@ let adminOrders = {
                             <p class="name">
                                 <router-link :to="'/admin/products/' + c.orderProduct.product.id">
                                     {{ c.orderProduct.product.name }}
-                            </router-link>
+                                </router-link>
                             <p class="count">{{ c.count }} X {{ c.orderProduct.price }} тг</p>
                         </p>
                         </template>
@@ -2102,6 +2058,7 @@ let adminOrders = {
                                     :value="s.id">{{ s.name }}</option>
                         </select>
                     </td>
+                    <td>{{ o.phone }}</td>
                     <td>
                         <input type="submit" value="Изменить" @click="save(o.id)">
                     </td>
@@ -2840,13 +2797,15 @@ const vue = new Vue({
             if (this.$router.currentRoute.path === '/')
                 this.search();
 
-            this.$router.push('/');
+            if(this.$router.currentRoute.path.startsWith('/admin') ||
+               this.$router.currentRoute.path === '/user')
+                this.$router.push('/');
         },
     },
-
     components: {
         'navbar': navbar,
         'footerr': footer,
+        comments: comments,
     },
     router,
 }).$mount('#app');

@@ -264,6 +264,25 @@ public class Controller {
         }
     }
 
+    @GetMapping("/products/{id}/brands")
+    public Set<Brand> getProductBrands(@PathVariable Long id) {
+
+        Product p = productRepository.getOne(id);
+
+        Set<Brand> brands = new LinkedHashSet<>();
+        Set<Model> models = new LinkedHashSet<>();
+        Set<Generation> generations = new LinkedHashSet<>();
+
+        for(ProductGeneration pg: p.getProductGenerations()) {
+
+            brands.add(pg.getGeneration().getModel().getBrand());
+            models.add(pg.getGeneration().getModel());
+            generations.add(pg.getGeneration());
+        }
+
+        return brands;
+    }
+
     @GetMapping("/orders")
     public List<Order> getOrders(@RequestParam(name = "id", required = false) Long id,
                                  @RequestParam(name = "after", required = false) String after,
@@ -324,14 +343,25 @@ public class Controller {
         return result;
     }
 
+    @GetMapping("/orders/{id}/price")
+    public Double getOrderPrice(@PathVariable Long id) {
+
+        double price = 0;
+
+        for(OrderContent oc: orderRepository.getOne(id).getOrderContents())
+            price += oc.getOrderProduct().getPrice() * oc.getCount();
+
+        return price;
+    }
+
     @GetMapping("/statuses")
     public List<Status> getStatuses() {
 
         return statusRepository.findAll();
     }
 
-    @GetMapping("/count")
-    public Integer getCount(@RequestParam(name = "id") Long id) {
+    @GetMapping("/products/{id}/count")
+    public Integer getCount(@PathVariable(name = "id") Long id) {
 
         Product product = productRepository.getOne(id);
 
