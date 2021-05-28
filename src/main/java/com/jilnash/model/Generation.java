@@ -5,6 +5,7 @@ import lombok.Data;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 @Data
 @Entity
@@ -22,4 +23,7 @@ public class Generation {
     @ManyToOne
     @JsonIgnore
     private Model model;
+
+    @OneToMany(mappedBy = "generation")
+    List<Type> types;
 }

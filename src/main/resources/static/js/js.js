@@ -795,13 +795,14 @@ let product = {
                                  
                                  <div class="model" v-for="m of b.models" :key="m.id">
                                       
-                                      <p class="parent" v-for="g of m.generations" @click="displayChild" :key="g.id">
-                                         {{ m.name }} {{ g.name }}
-                                      </p>
-                                      
-                                      <div class="type">
-                                        <p>2 CRDi</p>
-                                        <p>2 CRDi Привод на все колеса</p>
+                                      <div v-for="g of m.generations" :key="g.id">
+                                          <p class="parent" @click="displayChild">
+                                             {{ m.name }} {{ g.name }}
+                                          </p>
+                                          
+                                          <div class="type" v-for="t of g.types">
+                                            <p>{{ t.name }}</p>
+                                          </div>
                                       </div>
                                  </div>
                             </div>
@@ -878,13 +879,14 @@ let product = {
                              
                              <div class="model" v-for="m of b.models" :key="m.id">
                                   
-                                  <p class="parent" v-for="g of m.generations" @click="displayChild" :key="g.id">
-                                     {{ m.name }} {{ g.name }}
-                                  </p>
-                                  
-                                  <div class="type">
-                                      <p>2 CRDi</p>
-                                      <p>2 CRDi Привод на все колеса</p>
+                                  <div v-for="g of m.generations" :key="g.id">
+                                      <p class="parent" @click="displayChild">
+                                         {{ m.name }} {{ g.name }}
+                                      </p>
+                                          
+                                      <div class="type" v-for="t of g.types">
+                                        <p>{{ t.name }}</p>
+                                      </div>
                                   </div>
                              </div>
                         </div>

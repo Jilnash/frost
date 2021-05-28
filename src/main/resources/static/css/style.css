@@ -658,13 +658,20 @@ p.parent::before {
     margin-right: 8px;
 }
 
-p.parent.x::before {
+.x > p.parent::before {
     content: url("../img/–.svg");
 }
 
 .model, .type {
     display: none;
+}
+
+.model {
     margin-left: 20px;
+}
+
+.type {
+    margin-left: 35px;
 }
 
 .x > .model,
