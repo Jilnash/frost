@@ -667,6 +667,11 @@ p.parent.x::before {
     margin-left: 20px;
 }
 
+.x > .model,
+.x > .type {
+    display: block;
+}
+
 /*Copmpatable*/
 
 .product-info {

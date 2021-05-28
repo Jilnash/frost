@@ -280,6 +280,28 @@ public class Controller {
             generations.add(pg.getGeneration());
         }
 
+        for(Brand b: brands) {
+
+            List<Model> brandModels = new LinkedList<>();
+
+            for(Model mg: b.getModels()) {
+
+                List<Generation> modelGenerations = new LinkedList<>();
+
+                for(Generation g: mg.getGenerations())
+                    if(generations.contains(g))
+                        modelGenerations.add(g);
+
+                mg.setGenerations(modelGenerations);
+
+                for(Model m: models)
+                    if(m.equals(mg))
+                        brandModels.add(m);
+            }
+
+            b.setModels(brandModels);
+        }
+
         return brands;
     }
 

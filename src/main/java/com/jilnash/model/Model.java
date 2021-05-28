@@ -26,4 +26,9 @@ public class Model {
 
     @OneToMany(mappedBy = "model")
     private List<Generation> generations;
+
+    public boolean equals(Model model) {
+
+        return this.id.equals(model.getId());
+    }
 }

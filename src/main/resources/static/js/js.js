@@ -755,24 +755,12 @@ let product = {
         closeWindows: closeWindows,
         displayChild: function (e) {
 
-            let child = e.target.nextElementSibling;
+            let parent = e.target.parentElement;
 
-            if (child !== null &&
-                child.classList.contains('model') ||
-                child.classList.contains('type')) {
-
-                if (!e.target.classList.contains('x')) {
-                    e.target.classList.add('x');
-                } else {
-                    e.target.classList.remove('x');
-                }
-
-                if (child.style.display === 'block') {
-                    child.style.display = 'none';
-                } else {
-                    child.style.display = 'block';
-                }
-            }
+            if (parent.classList.contains('x'))
+                parent.classList.remove('x')
+            else
+                parent.classList.add('x')
         },
     },
     template: `
