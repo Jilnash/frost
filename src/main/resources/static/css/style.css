@@ -662,7 +662,8 @@ p.parent::before {
     content: url("../img/–.svg");
 }
 
-.model, .type {
+.compatable .model,
+.compatable .type {
     display: none;
 }
 
@@ -679,7 +680,7 @@ p.parent::before {
     display: block;
 }
 
-/*Copmpatable*/
+/*Compatable*/
 
 .product-info {
     display: flex;

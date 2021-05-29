@@ -2539,6 +2539,18 @@ let adminParams = {
                                 <input type="text" :value="g.name">
                                 <input type="submit" value="Изменить" @click="save('generation', g.id, m.id, $event)">
                                 <input type="submit" @click="remove('generation', g.id)" value="Удалить">
+                                <div class="types">
+                                    <a class="create-button" @click="displayInput">Добавить</a>
+                                    <div class="input">
+                                        <input type="text">
+                                        <input type="submit" value="Добавить" @click="save('type', -1, g.id, $event)">
+                                    </div>
+                                    <div class="type" v-for="t of g.types">
+                                        <input type="text" :value="t.name">
+                                        <input type="submit" value="Изменить" @click="save('type', t.id, g.id, $event)">
+                                        <input type="submit" @click="remove('type', t.id)" value="Удалить">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -72,6 +72,9 @@ public class Controller {
     @Autowired
     InstockRepository instockRepository;
 
+    @Autowired
+    TypeRepository typeRepository;
+
     @GetMapping("/products")
     public List<Product> getProducts(
             @RequestParam(name = "pattern", required = false) String pattern,
@@ -398,7 +401,7 @@ public class Controller {
     @PostMapping("/param")
     public void saveParam(@RequestParam(name = "param") String param,
                           @RequestParam(name = "name") String name,
-                          @RequestParam(name = "id", required = false) Long id,
+                          @RequestParam(name = "id") Long id,
                           @RequestParam(name = "parent", required = false) Long parent) {
 
         if(param.equals("category")) {
@@ -454,6 +457,20 @@ public class Controller {
             g.setName(name);
             g.setModel(modelRepository.getOne(parent));
             generationRepository.save(g);
+        }
+
+        if(param.equals("type")) {
+
+            Type t = null;
+
+            if (id != -1)
+                t = typeRepository.getOne(id);
+            else
+                t = new Type();
+
+            t.setName(name);
+            t.setGeneration(generationRepository.getOne(parent));
+            typeRepository.save(t);
         }
 
         if(param.equals("stock")) {
@@ -593,6 +610,14 @@ public class Controller {
 
         productGenerationRepository.deleteProductGenerationByGeneration(g);
         generationRepository.delete(g);
+    }
+
+    @PostMapping("/type/delete")
+    public void deleteType(@RequestParam(name = "id") Long id) {
+
+        Type t = typeRepository.getOne(id);
+
+        typeRepository.delete(t);
     }
 
     @GetMapping("/countries")
