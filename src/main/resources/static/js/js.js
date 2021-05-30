@@ -642,6 +642,10 @@ let footer = {
 let comments = Vue.component('comments', {
     props: ['comments', 'user', 'product'],
     methods: {
+        displayWindow: function (windowClass) {
+
+            displayWindow(windowClass)
+        },
         comment: function (e) {
 
             let text = e.target.previousElementSibling;
@@ -856,11 +860,14 @@ let product = {
                 </div>
                 <div class="product-price">
                     <p><b>{{ product.price }} тг</b></p>
-                    <div class="in-stock">
-                        <p class="text"><b>в наличии</b></p>
-                        <p v-for="instock in product.instocks"
+                    <div :class="(maxCount < 1) ? 'not' : ''" class="in-stock">
+                        <p v-if="maxCount > 0" class="text"><b>в наличии</b></p>
+                        <p v-else class="text"><b>нет в наличии</b></p>
+                        <p v-if="maxCount > 0"
+                           v-for="instock in product.instocks"
                            :key="instock.id">
-                           г. {{ instock.city }}
+                                
+                               г. {{ instock.stock.name }}
                         </p>
                     </div>
                     <a href="#" class="button" @click="displayWindowAndAddToBasket">Купить</a>
