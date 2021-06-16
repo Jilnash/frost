@@ -515,7 +515,7 @@ let products = {
                         <input id="model" type="hidden" name="model">
                         <a @click="displayDropdown" class="select-button">Все модели</a>
                         <div class="dropdown">
-                            <a v-if="models.length === 0">Выберите марку</a>
+                            <a v-if="!brand">Выберите марку</a>
                             <template v-else>
                                 <a v-if="model"
                                    @click="changeModel">Все модели</a>
@@ -530,7 +530,7 @@ let products = {
                         <input id="generation" type="hidden">
                         <a @click="displayDropdown" class="select-button">Все поколения</a>
                         <div class="dropdown">
-                            <a v-if="generations.length === 0">Выберите модель</a>
+                            <a v-if="!model">Выберите модель</a>
                             <template v-else>
                                 <a v-if="generation"
                                    @click="changeGeneration">Все поколения</a>
@@ -1475,6 +1475,8 @@ let user = {
         return {
             countries: [],
             regions: [],
+            country: undefined,
+            region: undefined,
             orderPrices: {},
         };
     },
@@ -1483,10 +1485,6 @@ let user = {
 
         this.$http.get("/countries").then(
             res => this.countries = JSON.parse(res.bodyText)
-        )
-
-        this.$http.get("/regions").then(
-            res => this.regions = JSON.parse(res.bodyText)
         )
 
         if (localStorage.user) {
@@ -1499,6 +1497,23 @@ let user = {
                         this.$http.get('/orders/' + o.id + '/price').then(
                             result => this.orderPrices[o.id.toString()] = JSON.parse(result.bodyText)
                         );
+
+                    if(this.user.country)
+                        this.country = this.user.country.name;
+
+                    if(this.user.region)
+                        this.region = this.user.region.name;
+
+                    let country = '?country=';
+
+                    if(this.user.country.name)
+                        country += this.user.country.name
+                    else
+                        country = ''
+
+                    this.$http.get("/regions" + country).then(
+                        res => this.regions = JSON.parse(res.bodyText)
+                    )
                 }
             )
         }
@@ -1536,6 +1551,37 @@ let user = {
         },
         displayDropdown: displayDropdown,
         changeOption: changeOption,
+        changeCountry: function (e) {
+
+            let countryName = e.currentTarget.textContent;
+
+            this.country = countryName;
+
+            if (this.country.startsWith('Все'))
+                this.country = undefined;
+
+            this.$http.get('/regions?country=' + countryName).then(
+                res => this.regions = JSON.parse(res.bodyText)
+            )
+
+            this.changeOption(e);
+
+            let region = document.querySelector('#user-region');
+
+            region.value = '';
+            region.nextElementSibling.textContent = 'Все регионы';
+
+            this.regions = [];
+        },
+        changeRegion: function (e) {
+
+            this.region = e.currentTarget.textContent;
+
+            if (this.region.startsWith('Все'))
+                this.region = undefined
+
+            this.changeOption(e);
+        },
         validateUserContacts: function () {
 
             let ok = true;
@@ -1785,35 +1831,35 @@ let user = {
                                 <p>Страна</p>
                                 <p class="explanation"></p>
                                 <input id="user-country" type="hidden"
-                                       :value="user.country === null ? '': user.country.name">
-                                <a v-if="user.country === null" 
-                                   @click="displayDropdown" 
-                                   class="select-button">Выберите страну</a>
+                                       :value="!country ? '': country">
+                                <a v-if="!country" 
+                                   @click="displayDropdown" class="select-button">Все страны</a>
                                 <a v-else
-                                   @click="displayDropdown" class="select-button">{{ user.country.name }}</a>
+                                   @click="displayDropdown" class="select-button">{{ country }}</a>
                                 <div class="dropdown">
-                                    <a v-if="" @click="changeOption">Все страны</a>
+                                    <a v-if="country" @click="changeCountry">Все страны</a>
                                     <a v-for="country in countries" 
                                        :key="country.id"
-                                       @click="changeOption">{{ country.name }}</a>
+                                       @click="changeCountry">{{ country.name }}</a>
                                 </div>
                             </div>
                             <div class="select">
                                 <p>Регион / Область</p>
                                 <p class="explanation"></p>
                                 <input id="user-region" type="hidden" 
-                                       :value="user.region === null ? '': user.region.name">
-                                <a v-if="user.region === null"
-                                   @click="displayDropdown" 
-                                   class="select-button">Выберите регион</a>
+                                       :value="!region ? '': region">
+                                <a v-if="!region"
+                                   @click="displayDropdown" class="select-button">Все регионы</a>
                                 <a v-else
-                                   @click="displayDropdown" 
-                                   class="select-button">{{ user.region.name }}</a>
+                                   @click="displayDropdown" class="select-button">{{ region }}</a>
                                 <div class="dropdown">
-                                    <a v-if="" @click="changeOption">Все регионы</a>
-                                    <a v-for="region in regions" 
-                                       :key="region.id"
-                                       @click="changeOption">{{ region.name }}</a>
+                                    <a v-if="!country">Выберите страну</a>
+                                    <template v-else>
+                                        <a v-if="region" @click="changeRegion">Все регионы</a>
+                                        <a v-for="region in regions" 
+                                           :key="region.id"
+                                           @click="changeRegion">{{ region.name }}</a>
+                                    </template>
                                 </div>
                             </div>
                             <div>
@@ -2448,7 +2494,8 @@ let adminParams = {
         return {
             categories: [],
             brands: [],
-            stocks: []
+            stocks: [],
+            countries: [],
         }
     },
     created: function () {
@@ -2463,6 +2510,10 @@ let adminParams = {
 
         this.$http.get('/stocks').then(
             res => this.stocks = JSON.parse(res.bodyText)
+        );
+
+        this.$http.get('/countries').then(
+            res => this.countries = JSON.parse(res.bodyText)
         );
     },
     methods: {
@@ -2575,6 +2626,31 @@ let adminParams = {
                 <input type="text" :value="s.name">
                 <input type="submit" value="Изменить" @click="save('stock', s.id, $event)">
                 <input type="submit" @click="remove('stock', s.id)" value="Удалить">
+            </div>
+        </div>
+        <div class="countries">
+            <p class="h">Страны, регионы</p>
+            <a class="create-button" @click="displayInput">Добавить</a>
+            <div class="input">
+                <input type="text">
+                <input type="submit" value="Добавить" @click="save('country', -1, -1, $event)">
+            </div>
+            <div class="country" v-for="c in countries">
+                <input type="text" :value="c.name">
+                <input type="submit" value="Изменить" @click="save('country', c.id, -1, $event)">
+                <input type="submit" @click="remove('country', c.id)" value="Удалить">
+                <div class="regions">
+                    <a class="create-button" @click="displayInput">Добавить</a>
+                    <div class="input">
+                        <input type="text">
+                        <input type="submit" value="Добавить" @click="save('region', -1, c.id, $event)">
+                    </div>
+                    <div class="region" v-for="r in c.regions">
+                        <input type="text" :value="r.name">
+                        <input type="submit" value="Изменить" @click="save('region', r.id, c.id, $event)">
+                        <input type="submit" @click="remove('region', c.id)" value="Удалить">
+                    </div>
+                </div>
             </div>
         </div>
     </div>

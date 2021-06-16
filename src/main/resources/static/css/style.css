@@ -1265,7 +1265,6 @@ p.price {
     width: 670px;
     padding: 60px 50px 20px 50px;
     margin-bottom: 303px;
-    border-top: none;
 }
 
 .content > p {
@@ -1633,7 +1632,8 @@ p.price {
 }
 
 .admin-params .models,
-.admin-params .generations {
+.admin-params .generations,
+.admin-params .regions {
     margin-left: 25px;
 }
 
@@ -2349,6 +2349,7 @@ p.price {
     .account .content {
         width: 295px;
         padding: 35px 12px 50px;
+        border-top: none;
     }
 
     .content > p {

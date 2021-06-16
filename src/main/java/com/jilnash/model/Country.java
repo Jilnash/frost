@@ -4,6 +4,7 @@ import lombok.Data;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 @Data
 @Entity
@@ -16,4 +17,7 @@ public class Country {
 
     @NotNull(message = "Задайте имя страны")
     private String name;
+
+    @OneToMany(mappedBy = "country")
+    private List<Region> regions;
 }

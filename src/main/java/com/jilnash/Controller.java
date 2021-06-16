@@ -485,6 +485,33 @@ public class Controller {
             s.setName(name);
             stockRepository.save(s);
         }
+
+        if(param.equals("country")) {
+
+            Country c = null;
+
+            if (id != -1)
+                c = countryRepository.getOne(id);
+            else
+                c = new Country();
+
+            c.setName(name);
+            countryRepository.save(c);
+        }
+
+        if(param.equals("region")) {
+
+            Region r = null;
+
+            if (id != -1)
+                r = regionRepository.getOne(id);
+            else
+                r = new Region();
+
+            r.setName(name);
+            r.setCountry(countryRepository.getOne(parent));
+            regionRepository.save(r);
+        }
     }
 
     @GetMapping("/stocks")
@@ -508,21 +535,6 @@ public class Controller {
         return categoryRepository.findAll();
     }
 
-    @GetMapping("/category")
-    public void saveCategory(@RequestBody Map<String, String> map) {
-
-        Category c = null;
-
-        if(map.get("id") != null)
-            c = categoryRepository.getOne(Long.valueOf(map.get("id")));
-        else
-            c = new Category();
-
-        c.setName(map.get("name"));
-
-        categoryRepository.save(c);
-    }
-
     @PostMapping("/category/delete")
     public void deleteCategory(@RequestParam(name = "id") Long id) {
 
@@ -535,21 +547,6 @@ public class Controller {
     public List<Brand> getBrands() {
 
         return brandRepository.findAll();
-    }
-
-    @GetMapping("/brand")
-    public void saveBrand(@RequestBody Map<String, String> map) {
-
-        Brand b = null;
-
-        if(map.get("id") != null)
-            b = brandRepository.getOne(Long.valueOf(map.get("id")));
-        else
-            b = new Brand();
-
-        b.setName(map.get("name"));
-
-        brandRepository.save(b);
     }
 
     @PostMapping("/brand/delete")
@@ -626,10 +623,31 @@ public class Controller {
         return countryRepository.findAll();
     }
 
-    @GetMapping("/regions")
-    public List<Region> getRegions() {
+    @PostMapping("/country/delete")
+    public void deleteCountry(@RequestParam(name = "id") Long id) {
 
-        return regionRepository.findAll();
+        Country c = countryRepository.getOne(id);
+
+        regionRepository.deleteAllByCountry(c);
+
+        countryRepository.delete(c);
+    }
+
+    @GetMapping("/regions")
+    public List<Region> getRegions(@RequestParam(name = "country", required = false) String name) {
+
+        if(name == null)
+            return regionRepository.findAll();
+
+        return regionRepository.findAllByCountry(countryRepository.findByName(name));
+    }
+
+    @PostMapping("/region/delete")
+    public void deleteRegion(@RequestParam(name = "id") Long id) {
+
+        Region r = regionRepository.getOne(id);
+
+        regionRepository.delete(r);
     }
 
     @PostMapping("/user")

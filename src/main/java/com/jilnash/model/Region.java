@@ -1,5 +1,6 @@
 package com.jilnash.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -16,4 +17,8 @@ public class Region {
 
     @NotNull(message = "Задайте имя региона")
     private String name;
+
+    @ManyToOne
+    @JsonIgnore
+    private Country country;
 }
