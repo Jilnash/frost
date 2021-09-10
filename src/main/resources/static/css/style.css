@@ -607,10 +607,6 @@ footer {
     border: 2px solid #e5e5e5;
 }
 
-.product .left {
-    margin-right: 66px;
-}
-
 .product-imgs {
     margin-bottom: 37px;
 }
@@ -618,6 +614,8 @@ footer {
 .main-img {
     margin-bottom: 10px;
     padding: 70px 15px 40px 15px;
+    width: 366px;
+    height: 286px;
 }
 
 .all-imgs .frame {
@@ -1505,8 +1503,47 @@ p.price {
     margin: 30px 0 20px 0;
 }
 
+.admin-product .img-button {
+    padding: 10px 20px;
+    font-size: 28px;
+    cursor: pointer;
+    margin-right: 30px;
+}
+
 .admin-product .imgs {
     width: 420px;
+}
+
+.admin-product .img.not-removable button,
+.admin-product .img.removable img,
+.admin-product .img.removable .delete {
+    display: block;
+}
+
+.admin-product .img.removable button,
+.admin-product .img.not-removable img,
+.admin-product .img.not-removable .delete {
+    display: none;
+}
+
+.admin-product .img {
+    position: relative;
+    margin-right: 30px;
+}
+
+.admin-product .delete {
+    position: absolute;
+    right: 0;
+    top: 0;
+    padding: 2px 9px;
+    color: white;
+    background: black;
+    opacity: 0.4;
+    cursor: pointer;
+}
+
+.admin-product .delete:hover {
+    opacity: 0.65;
 }
 
 .imgs img {
@@ -1514,8 +1551,8 @@ p.price {
 }
 
 .admin-product img {
-    width: 80px;
-    height: 80px;
+    width: 150px;
+    height: 150px;
 }
 
 .admin-product input,

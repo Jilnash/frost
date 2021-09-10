@@ -3,11 +3,15 @@ package com.jilnash;
 
 import com.jilnash.model.*;
 import com.jilnash.repository.*;
+import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -265,6 +269,34 @@ public class Controller {
 
             instockRepository.save(is);
         }
+    }
+
+    @PostMapping("/products/{id}/img")
+    public void setProductImgs(@PathVariable Long id, @RequestParam Map<String, MultipartFile> fd) throws IOException {
+
+        String dir = "C:\\Projects\\JavaProjects\\project\\src\\main\\resources\\static\\img\\product-" + id + "\\";
+
+        File directory = new File(dir);
+
+        if(directory.exists())
+            FileUtils.cleanDirectory(directory);
+        else
+            directory.mkdir();
+
+        fd.forEach((k, v) -> {
+
+            String type = v.getOriginalFilename().split("\\.")[1];
+            System.out.println(v.getOriginalFilename());
+
+            try {
+
+                v.transferTo(new File(dir + k + "." + type));
+
+            } catch (IOException e) {
+
+                e.printStackTrace();
+            }
+        });
     }
 
     @GetMapping("/products/{id}/brands")

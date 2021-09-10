@@ -17,9 +17,22 @@ public class Comment {
     private String text;
 
     @ManyToOne
+    @JsonIgnore
     private User user;
+
+    transient private String name;
 
     @ManyToOne
     @JsonIgnore
     private Product product;
+
+    public String getName() {
+
+        String patron = user.getPatronymic();
+
+        if(patron == null)
+            patron = "";
+
+        return user.getName() + " " + user.getSurname() + " " + patron;
+    }
 }

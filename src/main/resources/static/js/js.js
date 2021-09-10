@@ -681,9 +681,7 @@ let comments = Vue.component('comments', {
                 <div class="comment" v-for="comment in comments" :key="comment.id">
                     <p class="name">
                         <b>
-                            {{ comment.user.name }}
-                            {{ comment.user.surname }}
-                            {{ comment.user.patronymic }}
+                            {{ comment.name }}
                         </b>
                     </p>
                     <p>{{ comment.text }}</p>
@@ -701,6 +699,7 @@ let product = {
             maxCount: 0,
             brands: [],
             comments: [],
+            images: [null, null, null, null]
         }
     },
     props: ['user', 'count', 'addToBasket'],
@@ -727,6 +726,16 @@ let product = {
             this.$http.post('/user', {id: localStorage.user}).then(
                 res => this.user = JSON.parse(res.bodyText)
             )
+        }
+
+        for (let i = 1; i < 5; i++) {
+
+            let img = new Image();
+            img.src = '/img/product-' + this.$route.params.id + '/' + i + '.jpg';
+
+            img.onerror = () => img.src = '/img/Заглушка.svg';
+
+            this.images[i - 1] = img;
         }
     },
     methods: {
@@ -773,19 +782,10 @@ let product = {
             <div class="row desktop">
                 <div class="left">
                     <div class="product-imgs">
-                        <img class="frame main-img" src="/img/5003-01.png">
+                        <img class="frame main-img" :src="images[0].src">
                         <div class="row all-imgs">
-                            <div class="frame">
-                                <img src="/img/5003-01.png">
-                            </div>
-                            <div class="frame">
-                                <img src="/img/5003-02.png">
-                            </div>
-                            <div class="frame">
-                                <img src="/img/5003-03.png">
-                            </div>
-                            <div class="frame">
-                                <img src="/img/5003-04.png">
+                            <div v-for="img in images" class="frame">
+                                <img :src="img.src">
                             </div>
                         </div>
                     </div>
@@ -842,19 +842,10 @@ let product = {
             <div class="col mobile-product">
                 <p class="product-name h3">{{ product.name }}</p>
                 <div class="product-imgs">
-                    <img class="frame main-img" src="/img/5003-01.png">
+                    <img class="frame main-img" :src="images[0].src">
                     <div class="row all-imgs">
-                        <div class="frame">
-                            <img src="/img/5003-01.png">
-                        </div>
-                        <div class="frame">
-                            <img src="/img/5003-02.png">
-                        </div>
-                        <div class="frame">
-                            <img src="/img/5003-03.png">
-                        </div>
-                        <div class="frame">
-                            <img src="/img/5003-04.png">
+                        <div v-for="img in images" class="frame">
+                            <img :src="img.src">
                         </div>
                     </div>
                 </div>
@@ -1493,20 +1484,20 @@ let user = {
                 res => {
                     this.user = JSON.parse(res.bodyText)
 
-                    for(let o of this.user.orders)
+                    for (let o of this.user.orders)
                         this.$http.get('/orders/' + o.id + '/price').then(
                             result => this.orderPrices[o.id.toString()] = JSON.parse(result.bodyText)
                         );
 
-                    if(this.user.country)
+                    if (this.user.country)
                         this.country = this.user.country.name;
 
-                    if(this.user.region)
+                    if (this.user.region)
                         this.region = this.user.region.name;
 
                     let country = '?country=';
 
-                    if(this.user.country.name)
+                    if (this.user.country.name)
                         country += this.user.country.name
                     else
                         country = ''
@@ -1556,6 +1547,7 @@ let user = {
             let countryName = e.currentTarget.textContent;
 
             this.country = countryName;
+            this.region = undefined;
 
             if (this.country.startsWith('Все'))
                 this.country = undefined;
@@ -1830,8 +1822,7 @@ let user = {
                             <div class="select">
                                 <p>Страна</p>
                                 <p class="explanation"></p>
-                                <input id="user-country" type="hidden"
-                                       :value="!country ? '': country">
+                                <input id="user-country" type="hidden" :value="!country ? '': country">
                                 <a v-if="!country" 
                                    @click="displayDropdown" class="select-button">Все страны</a>
                                 <a v-else
@@ -1846,8 +1837,7 @@ let user = {
                             <div class="select">
                                 <p>Регион / Область</p>
                                 <p class="explanation"></p>
-                                <input id="user-region" type="hidden" 
-                                       :value="!region ? '': region">
+                                <input id="user-region" type="hidden" :value="!region ? '': region">
                                 <a v-if="!region"
                                    @click="displayDropdown" class="select-button">Все регионы</a>
                                 <a v-else
@@ -2265,6 +2255,9 @@ let adminProduct = {
             stocks: [],
             containedS: [],
             count: [],
+            images : [null, null, null, null, null],
+            imgBools: [false, false, false, false, false],
+            imgFiles: [null, null, null, null, null],
         }
     },
     methods: {
@@ -2371,9 +2364,62 @@ let adminProduct = {
                         this.$http.post('/product', product)
                 }
             )
-        }
+        },
+        selectImg: function (id, e) {
+
+            this.imgFiles[id] = e.target.files[0];
+
+            let img = document.querySelector('#img' + id);
+            img.src = URL.createObjectURL(this.imgFiles[id]);
+
+            e.target.parentElement.classList.add('removable');
+            e.target.parentElement.classList.remove('not-removable');
+        },
+        deleteImg: function (id, e) {
+
+            this.images[id] = null;
+            this.imgFiles[id] = null;
+
+            let img = document.querySelector('#img' + id);
+            img.src = '#';
+
+            e.target.parentElement.classList.add('not-removable');
+            e.target.parentElement.classList.remove('removable');
+        },
+        sendImgs: function () {
+
+            let xhr = new XMLHttpRequest();
+            let fd = new FormData();
+
+            xhr.open('POST', '/products/' + this.product.id + '/img', true);
+
+            for (let i = 1; i < this.imgFiles.length; i++)
+                fd.append(i + '', this.imgFiles[i]);
+
+            xhr.send(fd);
+        },
     },
     created: function () {
+
+        for (let i = 1; i < 5; i++) {
+
+            let img = new Image();
+
+            img.src = '/img/product-' + this.$route.params.id + '/' + i + '.jpg';
+
+            img.onload = () => {
+
+                this.imgBools[i] = true;
+                this.images[i] = img;
+
+                fetch(img.src)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        let image = new File([blob], img.src, blob);
+                        this.imgFiles[i] = image;
+                    })
+            }
+        }
 
         this.$http.get('/products/' + this.$route.params.id).then(
             res => {
@@ -2419,22 +2465,19 @@ let adminProduct = {
     <div class="container admin-product">
         <p class="h">Изображения</p>
         <div class="row imgs">
-            <div>
-                <img src="../img/5003-01.png">
-                <a href="#">Удалить</a>
+            <div v-for="i in 4" :class="imgBools[i] ? 'removable' : 'not-removable'" class="img">
+                <input style="display: none"
+                       type="file" 
+                       @change="selectImg(i, $event)"
+                       accept="image/*"
+                       :ref="'imgInput' + i">
+                <button class="img-button" 
+                        @click="$refs[('imgInput' + i)][0].click()">+</button>
+                <img :src="imgBools[i] ? images[i].src : '#'" 
+                     :id="'img' + i"> 
+                <div class="delete" @click="deleteImg(i, $event)">x</div>       
             </div>
-            <div>
-                <img src="../img/5003-02.png">
-                <a href="#">Удалить</a>
-            </div>
-            <div>
-                <img src="../img/5003-03.png">
-                <a href="#">Удалить</a>
-            </div>
-            <div>
-                <img src="../img/5003-04.png">
-                <a href="#">Удалить</a>
-            </div>
+            <button @click="sendImgs">Сохранить</button>
         </div>
         <p class="h">Основное</p>
         <div class="col">
@@ -2882,8 +2925,8 @@ const vue = new Vue({
             if (this.$router.currentRoute.path === '/')
                 this.search();
 
-            if(this.$router.currentRoute.path.startsWith('/admin') ||
-               this.$router.currentRoute.path === '/user')
+            if (this.$router.currentRoute.path.startsWith('/admin') ||
+                this.$router.currentRoute.path === '/user')
                 this.$router.push('/');
         },
     },
