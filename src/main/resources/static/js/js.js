@@ -463,6 +463,9 @@ let products = {
 
             this.search(pageNum);
         },
+        setDefImg: function(e) {
+            e.target.src = 'img/Заглушка.svg'
+        },
     },
     template: `
     <div>
@@ -551,7 +554,7 @@ let products = {
                          v-for="(product, index) in products"
                          :key="product.id"
                          :style= "(index + 1) % 3 === 0 ? 'margin-right: 0' : ''">
-                        <img src="img/Заглушка.svg">
+                        <img :src="'img/product-' + product.id + '/1.jpg'" @error="setDefImg($event)">
                         <p>{{ product.name }}</p>
                         <div>
                             <p>{{ product.price }} тг</p>

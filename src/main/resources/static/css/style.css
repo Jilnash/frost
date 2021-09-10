@@ -414,6 +414,7 @@ p.phone {
 
 .product-item img {
     width: 285px;
+    height: 200px;
     align-self: center;
 }
 
