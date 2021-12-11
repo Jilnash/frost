@@ -191,7 +191,7 @@ let navbar = {
 
                     if (ok) {
 
-                        this.$http.post('/reg', user);
+                        this.$http.post('/user/reg', user);
                         closeWindows();
                     }
                 }
@@ -267,7 +267,7 @@ let navbar = {
                     <div class="window login">
                         <img @click="closeWindows" src="/img/Vector%202.svg">
                         <h1>Вход в учетную запись</h1>
-                        <form class="col" method="post" action="/login">
+                        <form class="col" method="post" action="/user/login">
                             <div>
                                 <p class="explanation">Неправильный email или пароль</p>
                                 <input id="log-email" name="email" class="grey-input" type="text" placeholder="Адрес электронной почты">
@@ -356,11 +356,11 @@ let products = {
     props: ['products', 'search', 'maxPage', 'currentPage'],
     created: function () {
 
-        this.$http.get("/categories").then(
+        this.$http.get("/category/all").then(
             res => this.categories = JSON.parse(res.bodyText)
         );
 
-        this.$http.get("/brands").then(
+        this.$http.get("/brand/all").then(
             res => this.brands = JSON.parse(res.bodyText)
         );
 
@@ -368,7 +368,7 @@ let products = {
 
         (window.innerWidth > 1260) ? k = 9 : k = 3;
 
-        this.$http.get("/products").then(
+        this.$http.get("/product/all").then(
             res => {
                 let list = JSON.parse(res.bodyText);
                 this.products = list.slice(0, k);
@@ -401,7 +401,7 @@ let products = {
             if (this.brand.startsWith('Все'))
                 this.brand = undefined;
 
-            this.$http.get('/models?brand=' + brandName).then(
+            this.$http.get('/model/all?brand=' + brandName).then(
                 res => this.models = JSON.parse(res.bodyText)
             );
 
@@ -429,7 +429,7 @@ let products = {
             if (this.model.startsWith('Все'))
                 this.model = undefined;
 
-            this.$http.get('/generations?model=' + modelName).then(
+            this.$http.get('/generation/all?model=' + modelName).then(
                 res => this.generations = JSON.parse(res.bodyText)
             )
 
@@ -655,14 +655,13 @@ let comments = Vue.component('comments', {
 
             if (text.value.length > 0) {
 
-                this.$http.post('/comment', {
+                this.$http.post('/product/' + this.product.id + '/comment', {
                     user: this.user.id,
-                    product: this.product.id,
                     text: text.value,
                 })
 
                 this.comments.unshift({
-                    user: this.user,
+                    name: this.user.name + ' ' + this.user.surname,
                     text: text.value
                 })
 
@@ -708,25 +707,25 @@ let product = {
     props: ['user', 'count', 'addToBasket'],
     created: function () {
 
-        this.$http.get('/products/' + this.$route.params.id).then(
+        this.$http.get('/product/' + this.$route.params.id).then(
             res => {
                 this.product = JSON.parse(res.bodyText);
 
                 this.comments = this.product.comments.reverse()
 
-                this.$http.get('/products/' + this.product.id + '/count').then(
+                this.$http.get('/product/' + this.product.id + '/count').then(
                     result => this.maxCount = JSON.parse(result.bodyText)
                 );
             }
         );
 
-        this.$http.get('/products/' + this.$route.params.id + '/brands').then(
+        this.$http.get('/product/' + this.$route.params.id + '/brands').then(
             res => this.brands = JSON.parse(res.bodyText)
         )
 
         if (localStorage.user) {
 
-            this.$http.post('/user', {id: localStorage.user}).then(
+            this.$http.post('/user/' + localStorage.user).then(
                 res => this.user = JSON.parse(res.bodyText)
             )
         }
@@ -938,17 +937,17 @@ let order = {
     props: ['user', 'count', 'addToBasket'],
     created: function () {
 
-        this.$http.get("/countries").then(
+        this.$http.get("/country/all").then(
             res => this.countries = JSON.parse(res.bodyText)
         );
 
-        this.$http.get("/regions").then(
+        this.$http.get("/region/all").then(
             res => this.regions = JSON.parse(res.bodyText)
         );
 
         if (localStorage.user) {
 
-            this.$http.post('/user', {id: localStorage.user}).then(
+            this.$http.post('/user/' + localStorage.user).then(
                 res => {
                     this.user = JSON.parse(res.bodyText)
                 }
@@ -973,7 +972,7 @@ let order = {
 
                 if (count > 0) {
 
-                    this.$http.get('/products/' + id).then(
+                    this.$http.get('/product/' + id).then(
                         product => {
 
                             this.basket.push({
@@ -986,7 +985,7 @@ let order = {
                     )
                 }
 
-                this.$http.get('/products/' + id + '/count').then(
+                this.$http.get('/product/' + id + '/count').then(
                     result => this.maxCount[id.toString()] = JSON.parse(result.bodyText)
                 );
             }
@@ -1289,7 +1288,7 @@ let order = {
                             if (a.name.startsWith('product') && Number(a.value) > 0)
                                 order[a.name] = a.value;
 
-                        this.$http.post('/order', order).then(
+                        this.$http.post('/order/save', order).then(
                             res => {
                                 let id = JSON.parse(res.bodyText)
                                 this.number = '0'.repeat((6 - id.toString().length)) + id
@@ -1477,18 +1476,18 @@ let user = {
     props: ['user'],
     created: function () {
 
-        this.$http.get("/countries").then(
+        this.$http.get("/country/all").then(
             res => this.countries = JSON.parse(res.bodyText)
         )
 
         if (localStorage.user) {
 
-            this.$http.post('/user', {id: localStorage.user}).then(
+            this.$http.post('/user/' + localStorage.user).then(
                 res => {
                     this.user = JSON.parse(res.bodyText)
 
                     for (let o of this.user.orders)
-                        this.$http.get('/orders/' + o.id + '/price').then(
+                        this.$http.get('/order/' + o.id + '/price').then(
                             result => this.orderPrices[o.id.toString()] = JSON.parse(result.bodyText)
                         );
 
@@ -1505,7 +1504,7 @@ let user = {
                     else
                         country = ''
 
-                    this.$http.get("/regions" + country).then(
+                    this.$http.get("/region/all" + country).then(
                         res => this.regions = JSON.parse(res.bodyText)
                     )
                 }
@@ -1555,7 +1554,7 @@ let user = {
             if (this.country.startsWith('Все'))
                 this.country = undefined;
 
-            this.$http.get('/regions?country=' + countryName).then(
+            this.$http.get('/region/all?country=' + countryName).then(
                 res => this.regions = JSON.parse(res.bodyText)
             )
 
@@ -1902,7 +1901,7 @@ let new_password = {
                 again: again.value,
             }
 
-            this.$http.post('/new-password', password).then(
+            this.$http.post('/user/new-password', password).then(
                 res => {
 
                     if (res.bodyText === 'empty prev') {
@@ -1994,11 +1993,11 @@ let adminOrders = {
     },
     created: function () {
 
-        this.$http.get("/orders").then(
+        this.$http.get("/order/all").then(
             res => this.orders = JSON.parse(res.bodyText)
         );
 
-        this.$http.get("/statuses").then(
+        this.$http.get("/status/all").then(
             res => this.statuses = JSON.parse(res.bodyText)
         );
     },
@@ -2026,7 +2025,7 @@ let adminOrders = {
             if (phone !== '')
                 phone = '&phone=' + phone;
 
-            this.$http.get('/orders?p=p' + id + after + before + status + phone).then(
+            this.$http.get('/order/all?p=p' + id + after + before + status + phone).then(
                 res => this.orders = JSON.parse(res.bodyText)
             )
         },
@@ -2034,7 +2033,7 @@ let adminOrders = {
 
             let status = document.querySelector('#o' + order).value;
 
-            this.$http.post('/order/status?order=' + order + '&status=' + status);
+            this.$http.post('/order/ ' + order + '/status/' + status);
         }
     },
     template: `
@@ -2119,15 +2118,15 @@ let adminProducts = {
     },
     created: function () {
 
-        this.$http.get("/categories").then(
+        this.$http.get("/category/all").then(
             res => this.categories = JSON.parse(res.bodyText)
         );
 
-        this.$http.get("/brands").then(
+        this.$http.get("/brand/all").then(
             res => this.brands = JSON.parse(res.bodyText)
         );
 
-        this.$http.get("/products").then(
+        this.$http.get("/product/all").then(
             res => this.products = JSON.parse(res.bodyText)
         );
     },
@@ -2152,7 +2151,7 @@ let adminProducts = {
                 this.brand = true;
 
             (this.brand) ?
-                this.$http.get('/models?brand=' + name).then(
+                this.$http.get('/model/all?brand=' + name).then(
                     res => this.models = JSON.parse(res.bodyText)) :
                 this.models = [];
 
@@ -2175,7 +2174,7 @@ let adminProducts = {
                 this.model = true;
 
             (this.model) ?
-                this.$http.get('/generations?model=' + name).then(
+                this.$http.get('/generation/all?model=' + name).then(
                     res => this.generations = JSON.parse(res.bodyText)) :
                 this.generations = [];
 
@@ -2364,7 +2363,7 @@ let adminProduct = {
                     }
 
                     if (ok)
-                        this.$http.post('/product', product)
+                        this.$http.post('/product/save', product)
                 }
             )
         },
@@ -2394,7 +2393,7 @@ let adminProduct = {
             let xhr = new XMLHttpRequest();
             let fd = new FormData();
 
-            xhr.open('POST', '/products/' + this.product.id + '/img', true);
+            xhr.open('POST', '/product/' + this.product.id + '/img', true);
 
             for (let i = 1; i < this.imgFiles.length; i++)
                 fd.append(i + '', this.imgFiles[i]);
@@ -2424,7 +2423,7 @@ let adminProduct = {
             }
         }
 
-        this.$http.get('/products/' + this.$route.params.id).then(
+        this.$http.get('/product/' + this.$route.params.id).then(
             res => {
                 this.product = JSON.parse(res.bodyText)
 
@@ -2438,7 +2437,7 @@ let adminProduct = {
                         this.containedS.push(s.stock.id)
                     }
 
-                this.$http.get('/generations').then(
+                this.$http.get('/generation/all').then(
                     res => {
                         for (let g of JSON.parse(res.bodyText)) {
 
@@ -2456,11 +2455,11 @@ let adminProduct = {
             }
         );
 
-        this.$http.get('/categories').then(
+        this.$http.get('/category/all').then(
             res => this.categories = JSON.parse(res.bodyText)
         );
 
-        this.$http.get('/stocks').then(
+        this.$http.get('/stock/all').then(
             res => this.stocks = JSON.parse(res.bodyText)
         );
     },
@@ -2546,19 +2545,19 @@ let adminParams = {
     },
     created: function () {
 
-        this.$http.get('/categories').then(
+        this.$http.get('/category/all').then(
             res => this.categories = JSON.parse(res.bodyText)
         );
 
-        this.$http.get('/brands').then(
+        this.$http.get('/brand/all').then(
             res => this.brands = JSON.parse(res.bodyText)
         );
 
-        this.$http.get('/stocks').then(
+        this.$http.get('/stock/all').then(
             res => this.stocks = JSON.parse(res.bodyText)
         );
 
-        this.$http.get('/countries').then(
+        this.$http.get('/country/all').then(
             res => this.countries = JSON.parse(res.bodyText)
         );
     },
@@ -2585,15 +2584,14 @@ let adminParams = {
             let res = confirm("Подтвердить изменения")
 
             if (res)
-                this.$http.post('/param/?param=' + param +
-                    '&name=' + name + '&id=' + id + '&parent=' + parent);
+                this.$http.post('/' + param + '/' + id + '/save?name=' + name + '&parent=' + parent);
         },
         remove: function (param, id) {
 
             let res = confirm("Подтвердить изменения")
 
             if (res)
-                this.$http.post('/' + param + '/delete' + '?id=' + id);
+                this.$http.post('/' + param + '/' + id + '/delete');
         }
     },
     template: `
@@ -2761,7 +2759,7 @@ const vue = new Vue({
     created: function () {
 
         if (localStorage.user) {
-            this.$http.post('/user', {id: localStorage.user}).then(
+            this.$http.post('/user/' + localStorage.user).then(
                 res => this.user = JSON.parse(res.bodyText)
             )
         }
@@ -2833,7 +2831,7 @@ const vue = new Vue({
                 else
                     instock = ''
 
-                this.$http.get('/products'
+                this.$http.get('/product/all'
                     + '?device=' + device
                     + category
                     + brand
@@ -2894,7 +2892,7 @@ const vue = new Vue({
                 password: password.value,
             }
 
-            this.$http.post('/login', user).then(
+            this.$http.post('/user/login', user).then(
                 res => {
                     if (res.bodyText === '-1') {
 
@@ -2908,7 +2906,7 @@ const vue = new Vue({
 
                         closeWindows();
 
-                        this.$http.post('/user', {id: res.bodyText}).then(
+                        this.$http.post('/user/' + res.bodyText).then(
                             result => {
                                 this.user = JSON.parse(result.bodyText);
                                 localStorage.user = this.user.id;
