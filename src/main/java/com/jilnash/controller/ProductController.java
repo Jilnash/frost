@@ -1,4 +1,4 @@
-package com.jilnash;
+package com.jilnash.controller;
 
 import com.jilnash.model.*;
 import com.jilnash.repository.*;
@@ -173,7 +173,6 @@ public class ProductController {
         fd.forEach((k, v) -> {
 
             String type = v.getOriginalFilename().split("\\.")[1];
-            System.out.println(v.getOriginalFilename());
 
             try {
 

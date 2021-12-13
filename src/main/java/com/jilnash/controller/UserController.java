@@ -1,4 +1,4 @@
-package com.jilnash;
+package com.jilnash.controller;
 
 import com.jilnash.model.User;
 import com.jilnash.repository.CountryRepository;
@@ -146,6 +146,8 @@ public class UserController {
         for (ConstraintViolation<User> c : constr) {
 
             validationMap.put(c.getPropertyPath().toString(), c.getMessage());
+            System.out.println(c.getPropertyPath().toString());
+            System.out.println(c.getMessage());
         }
 
         return validationMap;

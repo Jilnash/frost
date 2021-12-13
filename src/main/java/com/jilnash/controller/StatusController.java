@@ -1,4 +1,4 @@
-package com.jilnash;
+package com.jilnash.controller;
 
 import com.jilnash.model.Status;
 import com.jilnash.repository.StatusRepository;

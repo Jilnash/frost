@@ -1,4 +1,4 @@
-package com.jilnash;
+package com.jilnash.controller;
 
 import com.jilnash.model.Category;
 import com.jilnash.repository.CategoryRepository;
