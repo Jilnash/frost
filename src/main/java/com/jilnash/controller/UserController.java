@@ -123,31 +123,33 @@ public class UserController {
     public Map<String, String> validateContacts(@RequestBody Map<String, String> map) {
 
         User user = userRepository.getOne(Long.valueOf(map.get("id")));
+        User user1 = new User();
+
+        user1.setPassword(user.getPassword());
+        user1.setRole(roleRepository.getOne(2L));
 
         if (!map.get("name").isEmpty())
-            user.setName(map.get("name"));
+            user1.setName(map.get("name"));
 
         if (!map.get("surname").isEmpty())
-            user.setSurname(map.get("surname"));
+            user1.setSurname(map.get("surname"));
 
         if (!map.get("patronymic").isEmpty())
-            user.setPatronymic(map.get("patronymic"));
+            user1.setPatronymic(map.get("patronymic"));
 
         if (!map.get("email").isEmpty())
-            user.setEmail(map.get("email"));
+            user1.setEmail(map.get("email"));
 
         if (!map.get("phone").isEmpty())
-            user.setPhone(map.get("phone"));
+            user1.setPhone(map.get("phone"));
 
-        Set<ConstraintViolation<User>> constr = validator.validate(user);
+        Set<ConstraintViolation<User>> constr = validator.validate(user1);
 
         Map<String, String> validationMap = new HashMap<>();
 
         for (ConstraintViolation<User> c : constr) {
 
             validationMap.put(c.getPropertyPath().toString(), c.getMessage());
-            System.out.println(c.getPropertyPath().toString());
-            System.out.println(c.getMessage());
         }
 
         return validationMap;

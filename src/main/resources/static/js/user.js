@@ -196,10 +196,6 @@ let user = {
                         phone.parentElement.classList.remove('incorrect');
                     }
 
-                    console.log("contacts");
-                    console.log(user)
-                    console.log(validationMap);
-
                     if (ok)
                         this.$http.post('/user/contacts', user);
                 }
