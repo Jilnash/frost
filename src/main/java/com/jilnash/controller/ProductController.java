@@ -161,7 +161,7 @@ public class ProductController {
     @PostMapping("/{id}/img")
     public void setImgs(@PathVariable Long id, @RequestParam Map<String, MultipartFile> fd) throws IOException {
 
-        String dir = "C:\\Projects\\JavaProjects\\project\\src\\main\\resources\\static\\img\\product-" + id + "\\";
+        String dir = System.getProperty("user.dir") + "\\src\\main\\resources\\static\\img\\product-" + id + "\\";
 
         File directory = new File(dir);
 
