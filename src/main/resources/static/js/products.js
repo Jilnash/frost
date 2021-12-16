@@ -137,7 +137,7 @@ let products = {
     <div>
         <div class="row banner">
             <button id="left"></button>
-            <div class="container row banner-body">
+            <div class="container row bannerr-body">
                 <div class="col info">
                     <p>Компрессоры для</p>
                     <li>легковых автомобилей</li>
