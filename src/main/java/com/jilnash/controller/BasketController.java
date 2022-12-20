@@ -11,7 +11,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/basket")
-public class BaskerController {
+public class BasketController {
 
     @PostMapping
     public void changeProductCountInBasket(HttpServletResponse response, @RequestBody Map<String, String> map) {
